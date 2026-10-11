@@ -17,13 +17,13 @@ renderDetailV2=function(){
 
 exportPng=async function(q){
   toast('正在按小程序版式生成报价图片…');
-  const W=1400,M=116,CW=W-M*2,products=q.products||[],probe=document.createElement('canvas').getContext('2d');
+  const W=1120,M=72,CW=W-M*2,products=q.products||[],probe=document.createElement('canvas').getContext('2d');
   const font=(s,w='400')=>`${w} ${s}px "PingFang SC","Microsoft YaHei",sans-serif`;
   const wrap=(v,max,size=22,weight='500')=>{probe.font=font(size,weight);const out=[];let row='';for(const ch of String(v||'未填写')){const n=row+ch;if(row&&probe.measureText(n).width>max){out.push(row);row=ch}else row=n}if(row)out.push(row);return out.length?out:['未填写']};
   const process=p=>[...(p.processes?.forming||[]),...(p.processes?.coloring||[]),...(p.processes?.surface||[])].join('、')||'未填写';
   const specs=p=>{const r=[['材质',p.material==='其他自定义'?(p.customMaterial||p.material):p.material||'未填写'],['尺寸',p.size||'未填写'],['工艺',process(p)],['电镀',joinCustom(p.processes?.plating,p.customPlating,'其他自定义输入')],['配件',joinCustom(p.accessories,p.customAccessory)],['包装',joinCustom(p.packaging,p.customPackaging)],['工期',p.leadTime||'待确认']];if(p.packingEnabled==='有')r.push(['产品克重',p.productWeight||'-'],['箱规',p.boxSpec||'-'],['装箱数量',`${p.packingQuantity||'-'} PCS`],['装箱重量',`毛重 ${p.grossWeight||'-'} KG / 净重 ${p.netWeight||'-'} KG`]);return r};
   const rowH=v=>Math.max(56,wrap(v,CW-210,22,'600').length*31+25);
-  const pHeight=p=>80+specs(p).reduce((n,[,v])=>n+rowH(v),0)+18+54+Math.max(1,(p.prices||[]).length)*62+56+56+(p.sample==='有'?168:0)+34;
+  const pHeight=p=>80+specs(p).reduce((n,[,v])=>n+rowH(v),0)+18+54+Math.max(1,(p.prices||[]).length)*62+56+10+56+(p.sample==='有'?182:0)+34;
   const H=350+products.reduce((n,p)=>n+pHeight(p),0)+78,canvas=document.createElement('canvas');canvas.width=W;canvas.height=Math.min(H,28000);const x=canvas.getContext('2d');
   const rect=(a,b,w,h,c)=>{x.fillStyle=c;x.fillRect(a,b,w,h)};const line=(a,b,c,d,color='#dce8e3',width=1)=>{x.strokeStyle=color;x.lineWidth=width;x.beginPath();x.moveTo(a,b);x.lineTo(c,d);x.stroke()};
   const text=(v,a,b,s=22,c='#173a32',w='400',align='left')=>{x.font=font(s,w);x.fillStyle=c;x.textAlign=align;x.textBaseline='alphabetic';x.fillText(String(v??''),a,b)};
@@ -38,14 +38,14 @@ exportPng=async function(q){
   products.forEach((p,pi)=>{
     rect(M,y,CW,62,'#196a57');text(`${pi+1}. ${displayName(p)||'未命名产品'}`,M+26,y+41,23,'#fff','800');y+=80;
     specs(p).forEach(([k,v],i)=>{const h=rowH(v);rect(M,y,CW,h,i%2?'#fff':'#eaf5f0');text(k+'：',M+26,y+37,18,'#6d817a','600');paragraph(v,M+170,y+38,CW-195,22,'#173a32','650',31);line(M,y+h,W-M,y+h,'#dfeae6',1);y+=h});
-    y+=18;rect(M,y,CW,54,'#e1f0ea');text('数量（PCS）',M+30,y+35,18,'#315f54','800');text('单价（元/PCS）',M+430,y+35,18,'#315f54','800');text('合计（含模具/版费）',W-M-28,y+35,18,'#315f54','800','right');y+=54;
-    const prs=(p.prices||[]).length?p.prices:[{quantity:'-',unitPrice:''}];prs.forEach(r=>{rect(M,y,CW,62,'#fff');text(r.quantity||'-',M+30,y+40,21,'#173a32','600');text(money(r.unitPrice),M+430,y+40,21,'#173a32','600');text(money(Number(r.quantity||0)*Number(r.unitPrice||0)+Number(p.mouldFee||0)),W-M-28,y+40,22,'#0c5545','800','right');line(M,y+62,W-M,y+62,'#e2ebe7',1);y+=62});
+    const priceCol2=M+Math.round(CW*.43);y+=18;rect(M,y,CW,54,'#dfeee8');text('数量（PCS）',M+30,y+35,18,'#315f54','800');text('单价（元/PCS）',priceCol2,y+35,18,'#315f54','800');text('合计（含模具/版费）',W-M-28,y+35,18,'#315f54','800','right');y+=54;
+    const prs=(p.prices||[]).length?p.prices:[{quantity:'-',unitPrice:''}];prs.forEach((r,ri)=>{rect(M,y,CW,62,ri%2?'#fff':'#f1f7f4');text(r.quantity||'-',M+30,y+40,21,'#173a32','600');text(money(r.unitPrice),priceCol2,y+40,21,'#173a32','600');text(money(Number(r.quantity||0)*Number(r.unitPrice||0)+Number(p.mouldFee||0)),W-M-28,y+40,22,'#0c5545','800','right');line(M,y+62,W-M,y+62,'#dbe7e2',1);y+=62});
     rect(M,y,CW,56,'#eaf5f0');text('模具/版费：',M+28,y+37,18,'#315f54','800');text(money(p.mouldFee),M+190,y+37,21,'#0d5948','800');y+=56;
-    rect(M,y,CW,56,'#eaf5f0');text('报价备注：',M+28,y+37,18,'#315f54','800');text(p.noteOption==='其他自定义'?(p.customNote||'无'):p.noteOption||'无',M+190,y+37,20,'#173a32','650');y+=56;
+    y+=10;rect(M,y,CW,56,'#f3f8f6');text('报价备注：',M+28,y+37,18,'#315f54','800');text(p.noteOption==='其他自定义'?(p.customNote||'无'):p.noteOption||'无',M+190,y+37,20,'#173a32','650');y+=56;
     if(p.sample==='有'){
-      rect(M,y,CW,56,'#eaf5f0');text('打样费',M+28,y+37,18,'#315f54','800');text(money(p.sampleFee),M+190,y+37,21,'#0d5948','800');text('下单可退',M+500,y+37,18,'#315f54','800');text(p.refundable||'否',M+650,y+37,20,'#173a32','700');if(p.refundable==='是')text(money(p.refundAmount),W-M-28,y+37,20,'#b64e44','800','right');y+=56;
-      rect(M,y,CW,56,'#eaf5f0');text('打样工期',M+28,y+37,18,'#315f54','800');text(p.sampleLeadTime||'待确认',M+190,y+37,20,'#173a32','650');y+=56;
-      rect(M,y,CW,56,'#eaf5f0');text('打样备注',M+28,y+37,18,'#315f54','800');text(p.sampleNote||'无',M+190,y+37,20,'#173a32','650');y+=56;
+      y+=14;rect(M,y,CW,56,'#eaf5f0');text('打样费',M+28,y+37,18,'#315f54','800');text(money(p.sampleFee),M+190,y+37,21,'#0d5948','800');text('下单可退',M+430,y+37,18,'#315f54','800');text(p.refundable||'否',M+560,y+37,20,'#173a32','700');if(p.refundable==='是')text(money(p.refundAmount),W-M-28,y+37,20,'#b64e44','800','right');line(M,y+56,W-M,y+56,'#d6e5df',1);y+=56;
+      rect(M,y,CW,56,'#fff');text('打样工期',M+28,y+37,18,'#315f54','800');text(p.sampleLeadTime||'待确认',M+190,y+37,20,'#173a32','650');line(M,y+56,W-M,y+56,'#d6e5df',1);y+=56;
+      rect(M,y,CW,56,'#eaf5f0');text('打样备注',M+28,y+37,18,'#315f54','800');text(p.sampleNote||'无',M+190,y+37,20,'#173a32','650');line(M,y+56,W-M,y+56,'#d6e5df',1);y+=56;
     }
     line(M,y+10,W-M,y+10,'#176b57',1);y+=34;
   });
