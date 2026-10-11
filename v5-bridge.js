@@ -20,8 +20,12 @@ exportPng=async function(q){
   const W=1120,M=72,CW=W-M*2,products=q.products||[],probe=document.createElement('canvas').getContext('2d');
   const font=(s,w='400')=>`${w} ${s}px "PingFang SC","Microsoft YaHei",sans-serif`;
   const wrap=(v,max,size=22,weight='500')=>{probe.font=font(size,weight);const out=[];let row='';for(const ch of String(v||'未填写')){const n=row+ch;if(row&&probe.measureText(n).width>max){out.push(row);row=ch}else row=n}if(row)out.push(row);return out.length?out:['未填写']};
-  const process=p=>[...(p.processes?.forming||[]),...(p.processes?.coloring||[]),...(p.processes?.surface||[])].join('、')||'未填写';
-  const specs=p=>{const r=[['材质',p.material==='其他自定义'?(p.customMaterial||p.material):p.material||'未填写'],['尺寸',p.size||'未填写'],['工艺',process(p)],['电镀',joinCustom(p.processes?.plating,p.customPlating,'其他自定义输入')],['配件',joinCustom(p.accessories,p.customAccessory)],['包装',joinCustom(p.packaging,p.customPackaging)],['工期',p.leadTime||'待确认']];if(p.packingEnabled==='有')r.push(['产品克重',p.productWeight||'-'],['箱规',p.boxSpec||'-'],['装箱数量',`${p.packingQuantity||'-'} PCS`],['装箱重量',`毛重 ${p.grossWeight||'-'} KG / 净重 ${p.netWeight||'-'} KG`]);return r};
+  const process=p=>[
+    joinCustom(p.processes?.forming,p.customForming,'其他自定义输入'),
+    joinCustom(p.processes?.coloring,p.customColoring,'其他自定义输入'),
+    joinCustom(p.processes?.surface,p.customSurface,'其他自定义输入')
+  ].filter(v=>v&&v!=='未填写').join('、')||'未填写';
+  const specs=p=>{const r=[['材质',p.material==='其他自定义'?(p.customMaterial||p.material):p.material||'未填写'],['尺寸',p.size||'未填写'],['工艺',process(p)],['电镀',joinCustom(p.processes?.plating,p.customPlating,'其他自定义输入')],['配件',joinCustom(p.accessories,p.customAccessory)],['包装',joinCustom(p.packaging,p.customPackaging)],['工期',p.leadTime||'待确认']];if(p.packingEnabled==='有')r.push(['产品克重',p.productWeight||'-'],['箱规',p.boxSpec==='其他自定义'?(p.customBoxSpec||p.boxSpec):(p.boxSpec||'-')],['装箱数量',`${p.packingQuantity||'-'} PCS`],['装箱重量',`毛重 ${p.grossWeight||'-'} KG / 净重 ${p.netWeight||'-'} KG`]);return r};
   const rowH=v=>Math.max(56,wrap(v,CW-210,22,'600').length*31+25);
   const pHeight=p=>80+specs(p).reduce((n,[,v])=>n+rowH(v),0)+18+54+Math.max(1,(p.prices||[]).length)*62+56+10+56+(p.sample==='有'?182:0)+34;
   const H=350+products.reduce((n,p)=>n+pHeight(p),0)+78,canvas=document.createElement('canvas');canvas.width=W;canvas.height=Math.min(H,28000);const x=canvas.getContext('2d');
