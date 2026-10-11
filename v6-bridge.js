@@ -15,4 +15,19 @@ renderDetailV2=function(){
   }).join('');
   document.querySelector('#app').innerHTML=shell(`<article class="q6-sheet"><header class="q6-header"><div class="q6-brand"><img src="./company-logo.jpg" alt="中禾完整 Logo"><div class="q6-company"><h1>温州市中禾工艺品有限公司</h1><p>源头大厂 · 专注行业三十余年 · 品质保证</p></div></div><div class="q6-title-row"><span>ZHONGHE QUOTATION</span><b>产品报价单</b></div></header><section class="q6-meta"><div class="q6-cell"><span>报价单号</span><b>${esc(q.number)}</b></div><div class="q6-cell"><span>报价日期</span><b>${esc(q.quoteDate||'未填写')}</b></div><div class="q6-cell"><span>有效期至</span><b>${esc(q.validUntil||'未填写')}</b></div></section><section class="q6-client"><div class="q6-section-label"><b>客户信息</b><small>CLIENT INFORMATION</small></div><div class="q6-client-grid"><div class="q6-client-cell"><span>客户名称</span><b>${esc(q.customer||'未填写')}</b></div><div class="q6-client-cell"><span>客户来源</span><b>${esc(clientSource)}</b></div><div class="q6-client-cell"><span>报价联系人</span><b>${esc(q.contact||'周先生')}</b></div><div class="q6-client-cell"><span>电话 / 微信</span><b>${esc(q.phoneWechat||'未填写')}</b></div></div></section>${products}<footer class="q6-footer"><strong>温州市中禾工艺品有限公司</strong>本报价以最终确认的规格、数量、工艺和样品为准；原材料价格波动可能影响最终成交价。</footer></article><div class="q6-actions"><button class="secondary" data-action="edit" data-id="${q.id}">修改</button><button class="ghost" data-action="duplicate" data-id="${q.id}">复制</button><button class="primary" data-action="export" data-id="${q.id}">保存报价图片</button></div>`,'报价详情',true)
 };
+
+const q6RenderEditBase=renderEdit;
+const q6DateParts=value=>String(value||'').split('-').map(Number);
+const q6DateDiff=(start,end)=>{const [sy,sm,sd]=q6DateParts(start),[ey,em,ed]=q6DateParts(end);if(!sy||!ey)return 30;return Math.round((Date.UTC(ey,em-1,ed)-Date.UTC(sy,sm-1,sd))/86400000)};
+const q6AddDays=(value,days)=>{const [y,m,d]=q6DateParts(value);if(!y)return '';const date=new Date(Date.UTC(y,m-1,d));date.setUTCDate(date.getUTCDate()+Number(days||0));return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}-${String(date.getUTCDate()).padStart(2,'0')}`};
+renderEdit=function(){
+  q6RenderEditBase();
+  const quoteDate=document.querySelector('input[name="quoteDate"]'),validUntil=document.querySelector('input[name="validUntil"]');
+  if(!quoteDate||!validUntil)return;
+  const presets=[0,30,60,90],diff=q6DateDiff(quoteDate.value,validUntil.value),selected=presets.includes(diff)?diff:30,field=validUntil.closest('.field');
+  field.innerHTML=`<label>报价有效期</label><select name="validityDays" aria-label="报价有效期">${presets.map(days=>`<option value="${days}" ${days===selected?'selected':''}>${days===0?'当天':days+'天'}</option>`).join('')}</select><input type="hidden" name="validUntil" value="${esc(validUntil.value)}"><small class="validity-hint">有效期至 ${esc(validUntil.value)}</small>`;
+  const preset=field.querySelector('select[name="validityDays"]'),hidden=field.querySelector('input[name="validUntil"]'),hint=field.querySelector('.validity-hint');
+  const sync=()=>{hidden.value=q6AddDays(quoteDate.value,preset.value);hint.textContent=`有效期至 ${hidden.value}`};
+  quoteDate.addEventListener('change',sync);preset.addEventListener('change',sync);sync();
+};
 if(store.state)render();
