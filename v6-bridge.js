@@ -31,6 +31,16 @@ renderEdit=function(){
   const sync=()=>{hidden.value=q6AddDays(quoteDate.value,preset.value);hint.textContent=`有效期至 ${hidden.value}`};
   quoteDate.addEventListener('change',sync);preset.addEventListener('change',sync);sync();
 };
+
+const q6RenderListBase=renderList;
+renderList=function(){
+  q6RenderListBase();
+  document.querySelectorAll('.quote-card').forEach(card=>{
+    const actions=card.querySelector('.card-actions'),id=card.dataset.open;
+    if(!actions||!id||actions.querySelector('[data-action="delete"]'))return;
+    actions.insertAdjacentHTML('beforeend',`<button class="danger" data-action="delete" data-id="${esc(id)}" aria-label="删除报价 ${esc(card.querySelector('.quote-no')?.textContent||'')}">删除</button>`);
+  });
+};
 ['gesturestart','gesturechange','gestureend'].forEach(type=>document.addEventListener(type,event=>event.preventDefault(),{passive:false}));
 document.addEventListener('touchmove',event=>{if(event.touches&&event.touches.length>1)event.preventDefault()},{passive:false});
 
