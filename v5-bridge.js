@@ -31,8 +31,8 @@ exportPng=async function(q){
   const pair=(label,value,x0,y0,width)=>{text(label+'：',x0,y0,18,'#71847d','600');let fs=22;x.font=font(fs,'700');while(fs>16&&x.measureText(String(value)).width>width-140){fs--;x.font=font(fs,'700')}text(value,x0+140,y0,fs,'#173a32','700')};
   rect(0,0,W,canvas.height,'#fff');
   let logo=null;try{logo=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src='./company-logo.jpg'})}catch{}
-  if(logo)x.drawImage(logo,40,193,205,196,M,48,104,99);
-  text('温州市中禾工艺品有限公司',M+128,91,36,'#12372f','800');text('源头大厂 · 专注行业三十余年 · 品质保证',M+128,128,17,'#61766f','600');text('产品报价单',W-M,102,34,'#12372f','800','right');line(M,158,W-M,158,'#176b57',3);
+  if(logo)x.drawImage(logo,29,179,520,220,M,42,220,93);
+  text('温州市中禾工艺品有限公司',M+244,82,32,'#12372f','800');text('源头大厂 · 专注行业三十余年 · 品质保证',M+244,119,17,'#61766f','600');text('产品报价单',W-M,91,34,'#12372f','800','right');text('QUOTATION',W-M,121,15,'#9a7840','800','right');line(M,158,W-M,158,'#176b57',3);
   const half=CW/2;pair('报价单号',q.number||'-',M,201,half);pair('有效期至',q.validUntil||'-',M+half,201,half);pair('客户名称',q.customer||'-',M,252,half);pair('客户来源',q.customerSource==='其他自定义'?(q.customCustomerSource||q.customerSource):q.customerSource||'-',M+half,252,half);pair('报价联系人',q.contact||'-',M,303,half);pair('电话/微信',q.phoneWechat||'-',M+half,303,half);
   let y=350;
   products.forEach((p,pi)=>{
