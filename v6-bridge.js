@@ -24,10 +24,13 @@ renderEdit=function(){
   q6RenderEditBase();
   const quoteDate=document.querySelector('input[name="quoteDate"]'),validUntil=document.querySelector('input[name="validUntil"]');
   if(!quoteDate||!validUntil)return;
+  quoteDate.closest('.form-grid.two')?.classList.add('date-grid');
   const presets=[0,30,60,90],diff=q6DateDiff(quoteDate.value,validUntil.value),selected=presets.includes(diff)?diff:30,field=validUntil.closest('.field');
   field.innerHTML=`<label>报价有效期</label><select name="validityDays" aria-label="报价有效期">${presets.map(days=>`<option value="${days}" ${days===selected?'selected':''}>${days===0?'当天':days+'天'}</option>`).join('')}</select><input type="hidden" name="validUntil" value="${esc(validUntil.value)}"><small class="validity-hint">有效期至 ${esc(validUntil.value)}</small>`;
   const preset=field.querySelector('select[name="validityDays"]'),hidden=field.querySelector('input[name="validUntil"]'),hint=field.querySelector('.validity-hint');
   const sync=()=>{hidden.value=q6AddDays(quoteDate.value,preset.value);hint.textContent=`有效期至 ${hidden.value}`};
   quoteDate.addEventListener('change',sync);preset.addEventListener('change',sync);sync();
 };
+['gesturestart','gesturechange','gestureend'].forEach(type=>document.addEventListener(type,event=>event.preventDefault(),{passive:false}));
+document.addEventListener('touchmove',event=>{if(event.touches&&event.touches.length>1)event.preventDefault()},{passive:false});
 if(store.state)render();
