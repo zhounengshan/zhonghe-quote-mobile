@@ -33,4 +33,44 @@ renderEdit=function(){
 };
 ['gesturestart','gesturechange','gestureend'].forEach(type=>document.addEventListener(type,event=>event.preventDefault(),{passive:false}));
 document.addEventListener('touchmove',event=>{if(event.touches&&event.touches.length>1)event.preventDefault()},{passive:false});
+
+const q6TopbarBase=topbar;
+topbar=function(title='报价工作台',back=false){
+  const html=q6TopbarBase(title,back);
+  return back?html.replace('<button class="icon-btn" data-action="back" aria-label="返回">←</button>','<button class="icon-btn back-btn" data-action="back" aria-label="返回报价列表"><span aria-hidden="true">←</span><span>返回</span></button>'):html;
+};
+
+const q6RenderBase=render;
+let q6HistoryReady=false,q6HandlingPop=false,q6LastRoute='';
+const q6RouteState=()=>({view:store.view||'list',id:store.id||''});
+const q6RouteKey=state=>`${state.view}:${state.id}`;
+render=function(){
+  q6RenderBase();
+  if(!store.mode||!store.state)return;
+  const state=q6RouteState(),key=q6RouteKey(state);
+  if(!q6HistoryReady){
+    history.replaceState(state,'',location.href);
+    q6HistoryReady=true;
+  }else if(!q6HandlingPop&&key!==q6LastRoute){
+    history.pushState(state,'',location.href);
+  }
+  q6LastRoute=key;
+  q6HandlingPop=false;
+};
+document.addEventListener('click',event=>{
+  const button=event.target.closest?.('[data-action="back"]');
+  if(!button||!q6HistoryReady)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if(store.view==='edit')snapshot();
+  history.back();
+},true);
+window.addEventListener('popstate',event=>{
+  const state=event.state||{view:'list',id:''};
+  q6HandlingPop=true;
+  store.view=state.view||'list';
+  store.id=state.id||'';
+  q6LastRoute=q6RouteKey(q6RouteState());
+  render();
+});
 if(store.state)render();
