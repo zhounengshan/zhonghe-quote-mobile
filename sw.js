@@ -1,4 +1,4 @@
-const CACHE='zhonghe-quote-mobile-v3';
+const CACHE='zhonghe-quote-mobile-v4';
 const ASSETS=['./','./index.html','./styles.css','./v2.css','./v3.css','./app.js','./v2-bridge.js','./v3-bridge.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
