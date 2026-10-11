@@ -5,9 +5,13 @@ renderDetailV2=function(){
   if(!q){store.view='list';return render()}
   const clientSource=q.customerSource==='其他自定义'?(q.customCustomerSource||q.customerSource):q.customerSource||'未填写';
   const products=(q.products||[]).map((p,i)=>{
-    const process=[...(p.processes?.forming||[]),...(p.processes?.coloring||[]),...(p.processes?.surface||[])].join('、')||'未填写';
+    const process=[
+      joinCustom(p.processes?.forming,p.customForming,'其他自定义输入'),
+      joinCustom(p.processes?.coloring,p.customColoring,'其他自定义输入'),
+      joinCustom(p.processes?.surface,p.customSurface,'其他自定义输入')
+    ].filter(v=>v&&v!=='未填写').join('、')||'未填写';
     const rows=[['材质',p.material==='其他自定义'?(p.customMaterial||p.material):p.material||'未填写'],['尺寸',p.size||'未填写'],['工艺',process],['电镀',joinCustom(p.processes?.plating,p.customPlating,'其他自定义输入')],['配件',joinCustom(p.accessories,p.customAccessory)],['包装',joinCustom(p.packaging,p.customPackaging)],['工期',p.leadTime||'待确认']];
-    if(p.packingEnabled==='有')rows.push(['产品克重',q6Value(p,'productWeight')],['箱规',q6Value(p,'boxSpec')],['装箱数量',`${q6Value(p,'packingQuantity')} PCS`],['装箱重量',`毛重 ${q6Value(p,'grossWeight')} KG / 净重 ${q6Value(p,'netWeight')} KG`]);
+    if(p.packingEnabled==='有')rows.push(['产品克重',q6Value(p,'productWeight')],['箱规',p.boxSpec==='其他自定义'?(p.customBoxSpec||p.boxSpec):q6Value(p,'boxSpec')],['装箱数量',`${q6Value(p,'packingQuantity')} PCS`],['装箱重量',`毛重 ${q6Value(p,'grossWeight')} KG / 净重 ${q6Value(p,'netWeight')} KG`]);
     const prices=(p.prices||[]).map(r=>`<div class="q6-price-row"><span>${esc(r.quantity||'-')} PCS</span><span>${q6Money(r.unitPrice)} / PCS</span><strong>${q6Money(Number(r.quantity||0)*Number(r.unitPrice||0)+Number(p.mouldFee||0))}</strong></div>`).join('');
     const note=p.noteOption==='其他自定义'?(p.customNote||'无'):p.noteOption||'无';
     const sample=p.sample==='有'?`<div class="q6-block-title">打样信息</div><div class="q6-info-row sample-fee"><span>打样费</span><b>${q6Money(p.sampleFee)}</b><span>下单可退</span><b>${p.refundable==='是'?q6Money(p.refundAmount):'否'}</b></div><div class="q6-info-row"><span>打样工期</span><b>${esc(p.sampleLeadTime||'待确认')}</b></div><div class="q6-info-row"><span>打样备注</span><b>${esc(p.sampleNote||'无')}</b></div>`:'';
@@ -22,6 +26,25 @@ const q6DateDiff=(start,end)=>{const [sy,sm,sd]=q6DateParts(start),[ey,em,ed]=q6
 const q6AddDays=(value,days)=>{const [y,m,d]=q6DateParts(value);if(!y)return '';const date=new Date(Date.UTC(y,m-1,d));date.setUTCDate(date.getUTCDate()+Number(days||0));return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}-${String(date.getUTCDate()).padStart(2,'0')}`};
 renderEdit=function(){
   q6RenderEditBase();
+  (editing?.products||[]).forEach((product,index)=>{
+    const groups=[
+      ['forming',product.processes?.forming,'其他自定义输入','自定义成型工艺','customForming'],
+      ['coloring',product.processes?.coloring,'其他自定义输入','自定义上色工艺','customColoring'],
+      ['surface',product.processes?.surface,'其他自定义输入','自定义表面处理','customSurface'],
+      ['plating',product.processes?.plating,'其他自定义输入','自定义电镀','customPlating'],
+      ['accessories',product.accessories,'其他自定义','自定义配件','customAccessory'],
+      ['packaging',product.packaging,'其他自定义','自定义包装','customPackaging']
+    ];
+    groups.forEach(([group,selected,option,label,key])=>{
+      if(!(selected||[]).includes(option))return;
+      const choice=document.querySelector(`input[name="p.${index}.${group}"][value="${option}"]`);
+      choice?.closest('.chips')?.insertAdjacentHTML('afterend',input(label,`p.${index}.${key}`,product[key]||'','text','class="custom-entry" placeholder="请输入具体内容"'));
+    });
+    if(product.packingEnabled==='有'&&product.boxSpec==='其他自定义'){
+      const box=document.querySelector(`select[name="p.${index}.boxSpec"]`);
+      box?.closest('.field')?.insertAdjacentHTML('afterend',input('自定义箱规',`p.${index}.customBoxSpec`,product.customBoxSpec||'','text','class="custom-entry" placeholder="例如 40×30×20cm"'));
+    }
+  });
   const quoteDate=document.querySelector('input[name="quoteDate"]'),validUntil=document.querySelector('input[name="validUntil"]');
   if(!quoteDate||!validUntil)return;
   quoteDate.closest('.form-grid.two')?.classList.add('date-grid');
@@ -31,6 +54,12 @@ renderEdit=function(){
   const sync=()=>{hidden.value=q6AddDays(quoteDate.value,preset.value);hint.textContent=`有效期至 ${hidden.value}`};
   quoteDate.addEventListener('change',sync);preset.addEventListener('change',sync);sync();
 };
+document.addEventListener('change',event=>{
+  if(store.view!=='edit')return;
+  const customChip=event.target.matches('.chip input[type="checkbox"]')&&String(event.target.value).includes('其他自定义');
+  const customBox=event.target.matches('select[name$=".boxSpec"]');
+  if(customChip||customBox){snapshot();renderEdit()}
+});
 
 const q6RenderListBase=renderList;
 renderList=function(){
