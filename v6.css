@@ -8,6 +8,8 @@
 .validity-hint{display:block;margin-top:-1px;color:#779087;font-size:10px;line-height:1.4}
 html,body{touch-action:pan-x pan-y}.field,.date-grid{min-width:0}.field input,.field select,.field textarea{display:block;min-width:0;max-width:100%}.field input[type="date"]{display:flex;align-items:center;justify-content:center;width:100%;height:52px;min-height:52px;padding-top:0;padding-bottom:0;line-height:normal;-webkit-appearance:none;appearance:none;text-align:center;text-align-last:center}.field input[type="date"]::-webkit-date-and-time-value{display:flex;align-items:center;justify-content:center;width:100%;min-width:100%;height:100%;margin:0;line-height:normal;text-align:center}.field input[type="date"]::-webkit-datetime-edit{display:flex;align-items:center;justify-content:center;height:100%;padding:0;line-height:normal}.field input[type="date"]::-webkit-datetime-edit-fields-wrapper{display:flex;align-items:center;height:100%;padding:0}.date-grid .field select{text-align:center;text-align-last:center}.date-grid>*{min-width:0}
 .custom-entry{margin-top:2px}
+.field input[type="number"]{-moz-appearance:textfield;appearance:textfield}
+.field input[type="number"]::-webkit-inner-spin-button,.field input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 @media(max-width:520px){.date-grid{grid-template-columns:minmax(0,1fr)!important}}
 @media(max-width:420px){.sticky-save{margin-left:-14px;margin-right:-14px}}
 .back-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:auto;white-space:nowrap}
