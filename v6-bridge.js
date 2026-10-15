@@ -64,12 +64,111 @@ document.addEventListener('change',event=>{
 const q6RenderListBase=renderList;
 renderList=function(){
   q6RenderListBase();
+  document.querySelector('.toolbar')?.insertAdjacentHTML('beforebegin',`<section class="backup-tools" aria-label="报价备份"><div><strong>报价备份</strong><p>导出后保存到文件，可在其他设备导入；不会自动同步。</p></div><div class="backup-buttons"><button class="ghost" data-action="backup-export">导出备份</button><button class="ghost" data-action="backup-import">导入恢复</button></div><input type="file" id="quote-backup-file" accept=".json,application/json" hidden></section>`);
   document.querySelectorAll('.quote-card').forEach(card=>{
     const actions=card.querySelector('.card-actions'),id=card.dataset.open;
     if(!actions||!id||actions.querySelector('[data-action="delete"]'))return;
     actions.insertAdjacentHTML('beforeend',`<button class="danger" data-action="delete" data-id="${esc(id)}" aria-label="删除报价 ${esc(card.querySelector('.quote-no')?.textContent||'')}">删除</button>`);
   });
 };
+
+// Backups contain quote records only, including custom fields and embedded photos.
+function q6BackupPayload(quotes){
+  return {format:'zhonghe-quote-backup',version:1,exportedAt:new Date().toISOString(),quotes:clone(quotes)};
+}
+function q6ReadBackup(value){
+  if(!value||value.format!=='zhonghe-quote-backup'||value.version!==1||!Array.isArray(value.quotes))throw new Error('请选择本工具导出的 JSON 备份文件');
+  if(value.quotes.length>10000)throw new Error('备份报价数量过多，请分批导入');
+  const record=v=>v&&typeof v==='object'&&!Array.isArray(v);
+  const scalar=v=>v===undefined||v===null||['string','number'].includes(typeof v);
+  return value.quotes.map((q,index)=>{
+    const fail=()=>{throw new Error(`备份第 ${index+1} 条报价格式不正确，未导入任何数据`)};
+    if(!record(q)||typeof q.number!=='string'||!q.number.trim()||typeof q.customer!=='string'||!Array.isArray(q.products)||!q.products.length)fail();
+    if(Object.values(q).some(v=>typeof v==='function')||!scalar(q.id))fail();
+    const next=clone(q);
+    for(const key of ['customerSource','customCustomerSource','contact','phoneWechat','quoteDate','validUntil','status','createdAt','updatedAt'])if(!scalar(next[key]))fail();
+    next.products=next.products.map(p=>{
+      if(!record(p)||typeof p.name!=='string'||!Array.isArray(p.prices))fail();
+      const product={...emptyProduct(),...p,processes:{...emptyProduct().processes,...p.processes}};
+      for(const group of ['forming','coloring','surface','plating'])if(!Array.isArray(product.processes[group])||product.processes[group].some(v=>typeof v!=='string'))fail();
+      for(const key of ['accessories','packaging'])if(!Array.isArray(product[key])||product[key].some(v=>typeof v!=='string'))fail();
+      for(const key of ['quotePhotos','referencePhotos'])if(!Array.isArray(product[key])||product[key].some(v=>typeof v!=='string'&&!(record(v)&&(typeof v.url==='string'||typeof v.raw==='string'))))fail();
+      for(const [key,val] of Object.entries(product))if(!['processes','prices','accessories','packaging','quotePhotos','referencePhotos'].includes(key)&&!scalar(val))fail();
+      if(product.prices.some(r=>!record(r)||!scalar(r.quantity)||!scalar(r.unitPrice)))fail();
+      return product;
+    });
+    return next;
+  });
+}
+function q6BackupSignature(q){
+  const sort=v=>Array.isArray(v)?v.map(sort):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().filter(k=>!['id','createdAt','updatedAt','backupOriginalNumber'].includes(k)).map(k=>[k,sort(v[k])])):v;
+  const normalized={...q,number:q.backupOriginalNumber||q.number,products:(q.products||[]).map(p=>({...emptyProduct(),...p,processes:{...emptyProduct().processes,...p.processes}}))};
+  return JSON.stringify(sort(normalized));
+}
+function q6MergeBackup(existing,incoming){
+  const quotes=clone(existing),signatures=new Set(quotes.map(q6BackupSignature));
+  const ids=new Set(quotes.map(q=>String(q.id))),numbers=new Set(quotes.map(q=>q.number));
+  let added=0,skipped=0,conflicts=0;
+  for(const item of incoming){
+    const q=clone(item),signature=q6BackupSignature(q);
+    if(signatures.has(signature)){skipped++;continue}
+    const originalNumber=q.number;
+    if(numbers.has(q.number)){
+      q.backupOriginalNumber=q.backupOriginalNumber||originalNumber;
+      let suffix=1;do{q.number=`${originalNumber}-导入${suffix++}`}while(numbers.has(q.number));
+      conflicts++;
+    }
+    if(!q.id||ids.has(String(q.id)))do{q.id=uid('q')}while(ids.has(String(q.id)));
+    quotes.push(q);ids.add(String(q.id));numbers.add(q.number);signatures.add(signature);added++;
+  }
+  return {quotes,added,skipped,conflicts};
+}
+function q6BackupDialog(title,message,confirmLabel){
+  return new Promise(resolve=>{
+    document.querySelector('#dialog-root').innerHTML=`<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-card"><h2>${esc(title)}</h2><p>${esc(message)}</p><div class="modal-actions"><button class="ghost" data-backup-cancel>取消</button><button class="primary" data-backup-confirm>${esc(confirmLabel)}</button></div></div></div>`;
+    const finish=ok=>{document.querySelector('#dialog-root').innerHTML='';resolve(ok)};
+    document.querySelector('[data-backup-cancel]').onclick=()=>finish(false);
+    document.querySelector('[data-backup-confirm]').onclick=()=>finish(true);
+  });
+}
+document.addEventListener('click',async event=>{
+  const action=event.target.closest('[data-action]')?.dataset.action;
+  if(action==='backup-import')document.querySelector('#quote-backup-file')?.click();
+  if(action!=='backup-export')return;
+  try{
+    const quotes=store.state?.quotes||[];
+    if(!quotes.length)return toast('暂无报价可备份');
+    const blob=new Blob([JSON.stringify(q6BackupPayload(quotes),null,2)],{type:'application/json'});
+    const fileName=`中禾报价备份-${today()}-${quotes.length}条.json`;
+    const file=typeof File==='function'?new File([blob],fileName,{type:'application/json'}):null;
+    if(file&&navigator.canShare?.({files:[file]})){
+      await navigator.share({files:[file],title:'中禾报价备份'});
+      toast('请确认已将备份保存到“文件”或其他安全位置');
+    }else{
+      const url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download=fileName;document.body.append(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);toast('已发起备份下载，请保存好 JSON 文件');
+    }
+  }catch(error){if(error.name!=='AbortError')toast('备份导出失败：'+error.message)}
+});
+document.addEventListener('change',async event=>{
+  if(event.target.id!=='quote-backup-file')return;
+  const file=event.target.files?.[0];event.target.value='';if(!file)return;
+  try{
+    if(file.size>50*1024*1024)throw new Error('备份文件超过 50MB，请分批导入');
+    let parsed;try{parsed=JSON.parse(await file.text())}catch{throw new Error('文件无法解析，请选择完整的 JSON 备份文件')}
+    const incoming=q6ReadBackup(parsed),preview=q6MergeBackup(store.state?.quotes||[],incoming);
+    if(!preview.added)return toast(`没有新增报价，${preview.skipped} 条重复记录已跳过`);
+    const approved=await q6BackupDialog('导入报价备份',`文件包含 ${incoming.length} 条报价，预计新增 ${preview.added} 条、跳过重复 ${preview.skipped} 条。同单号但内容不同的 ${preview.conflicts} 条将添加“导入”后缀，两份均保留。现有报价不会被覆盖。`,'确认导入');
+    if(!approved)return;
+    const result=q6MergeBackup(store.state?.quotes||[],incoming);
+    const next={...store.state,quotes:result.quotes};
+    // Commit storage first: a quota failure must leave the current state untouched.
+    localStorage.setItem('zhq_demo_state',JSON.stringify(next));
+    store.state=next;store.keyword='';store.view='list';store.id='';render();
+    toast(`导入完成：新增 ${result.added} 条，跳过重复 ${result.skipped} 条`);
+  }catch(error){toast(error.name==='QuotaExceededError'?'存储空间不足，未导入；请先导出现有报价备份':error.message)}
+});
 ['gesturestart','gesturechange','gestureend'].forEach(type=>document.addEventListener(type,event=>event.preventDefault(),{passive:false}));
 document.addEventListener('touchmove',event=>{if(event.touches&&event.touches.length>1)event.preventDefault()},{passive:false});
 
