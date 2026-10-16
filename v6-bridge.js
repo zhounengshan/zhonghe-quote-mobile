@@ -68,9 +68,9 @@ document.addEventListener('change',event=>{
 });
 
 const q6RenderListBase=renderList;
-renderList=function(){
-  q6RenderListBase();
-  document.querySelector('.toolbar')?.insertAdjacentHTML('beforebegin',`<section class="backup-tools" aria-label="报价备份"><div><strong>报价备份</strong><p>导出后保存到文件，可在其他设备导入；不会自动同步。</p></div><div class="backup-buttons"><button class="ghost" data-action="backup-export">导出备份</button><button class="ghost" data-action="backup-import">导入恢复</button></div><input type="file" id="quote-backup-file" accept=".json,application/json" hidden></section>`);
+renderList=function(options={}){
+  q6RenderListBase(options);
+  if(!options.resultsOnly)document.querySelector('.toolbar')?.insertAdjacentHTML('beforebegin',`<section class="backup-tools" aria-label="报价备份"><div><strong>报价备份</strong><p>导出后保存到文件，可在其他设备导入；不会自动同步。</p></div><div class="backup-buttons"><button class="ghost" data-action="backup-export">导出备份</button><button class="ghost" data-action="backup-import">导入恢复</button></div><input type="file" id="quote-backup-file" accept=".json,application/json" hidden></section>`);
   document.querySelectorAll('.quote-card').forEach(card=>{
     const actions=card.querySelector('.card-actions'),id=card.dataset.open;
     if(!actions||!id||actions.querySelector('[data-action="delete"]'))return;
