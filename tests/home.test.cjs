@@ -10,6 +10,7 @@ const nodes = {
   '#home-results': { innerHTML: '' },
   '#home-result-count': { textContent: '' },
   '#home-clear': { hidden: true }
+  ,'#home-analytics': { innerHTML: '' }
 };
 const context = {
   store: { view: 'list', keyword: '', state: null },
@@ -19,6 +20,7 @@ const context = {
   },
   esc: value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])),
   today: () => '2026-10-16',
+  q6AddDays: (date,days) => {const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);},
   displayName: product => product.customName || product.name,
   render() { throw Error('Should not render before loading state'); }
 };
@@ -66,3 +68,23 @@ context.store.state = { quotes: [] };
 context.renderList();
 assert(nodes['#app'].html.includes('从第一份报价开始'));
 console.log('PASS: IME, Chinese/custom-product search, clearing, no matches, empty data, escaping, immutable records and stable input render');
+const counts=context.homeCategoryCounts([
+  {products:[{name:'徽章'},{name:'徽章'},{name:'奖牌'}]},
+  {products:[{name:'奖牌'}]},
+  {products:[{name:'其他金属制品',customName:'甲'},{name:'其他金属制品',customName:'乙'}]}
+]);
+assert.equal(counts.find(x=>x.name==='徽章').count,1);
+assert.equal(counts.find(x=>x.name==='奖牌').count,2);
+assert.equal(counts.find(x=>x.name==='其他金属制品').count,1);
+assert.equal(context.homeDateRange('30','2026-03-01').start,'2026-01-31');
+assert.equal(context.homeDateRange('month','2026-10-16').start,'2026-10-01');
+vm.runInContext("homePeriod.start='2026-10-01';homePeriod.end='2026-10-16'",context);
+assert(context.homeInPeriod({quoteDate:'2026-10-01'}));
+assert(context.homeInPeriod({quoteDate:'2026-10-16'}));
+assert(!context.homeInPeriod({quoteDate:'2026-09-30'}));
+assert(!context.homeInPeriod({quoteDate:'2026-10-17'}));
+assert(!context.homeInPeriod({}));
+vm.runInContext("homePeriod.start='';homePeriod.end=''",context);
+assert(context.homeInPeriod({}));
+assert(!context.homeAnalytics([]).includes('NaN'));
+console.log('PASS: category deduplication, multi-category counts, calendar boundaries, inclusive date range, missing dates and zero-data chart');
