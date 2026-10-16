@@ -1,5 +1,5 @@
 /* Scoped homepage design: 4px spacing, complete logo, task-first hierarchy. */
-.qh-home{--qh-text:#183c32;--qh-muted:#52685f;--qh-line:#dce5df;--qh-green:#0b4c3f;--qh-soft:#edf5f0;max-width:1040px;min-height:100dvh;margin:0 auto;background:#f6f8f6;color:var(--qh-text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.5;caret-color:var(--qh-green);scrollbar-color:#93a99c #f6f8f6}
+.qh-home{--qh-text:#203c45;--qh-muted:#526773;--qh-line:#d7e2e3;--qh-green:#126660;--qh-soft:#e8f3f0;max-width:1040px;min-height:100dvh;margin:0 auto;background:#f5f7f6;color:var(--qh-text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.5;caret-color:var(--qh-green);scrollbar-color:#809c9c #f5f7f6}
 .qh-home ::selection{background:#cee6d7;color:#123f30}
 .qh-home button,.qh-home summary,.qh-home input{font-family:inherit;letter-spacing:normal}
 .qh-home button:focus-visible,.qh-home summary:focus-visible{outline:2px solid var(--qh-green);outline-offset:3px}
@@ -84,3 +84,58 @@
 }
 @media(max-width:359px){.qh-brand{gap:8px}.qh-logo{width:72px;height:36px}.qh-brand h1{font-size:16px;padding-left:8px}.qh-backup>summary{padding:0 4px}.qh-backup>summary svg{display:none}.qh-list-heading{flex-direction:column;align-items:flex-start;gap:4px}.qh-list-heading p{text-align:left}}
 @media print{.qh-header details,.qh-toolbar,.qh-actions,.qh-more,.qh-mobile-dock{display:none}.qh-home{max-width:none}.qh-main{padding:20px}.qh-card{break-inside:avoid}}
+
+/* v24 — linked date filters and quote-category counts. */
+.qh-filter-title,.qh-analytics-head,.qh-chart-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.qh-filter-title h2,.qh-analytics-head h2{margin:0;font-size:18px;font-weight:650}
+.qh-filter-title span,.qh-analytics-head p,.qh-chart-heading>span{margin:0;color:var(--qh-muted);font-size:13px}
+.qh-time-filter{margin-bottom:24px}
+.qh-periods{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.qh-periods button{min-height:44px;padding:8px 20px;border:1px solid var(--qh-line);border-radius:8px;background:#fff;color:var(--qh-muted);font-size:14px;font-weight:600}
+.qh-periods button[aria-pressed="true"]{border-color:var(--qh-green);background:var(--qh-green);color:#fff}
+.qh-custom-range{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px;margin-top:16px}
+.qh-custom-range label{display:grid;min-width:0;gap:6px;color:var(--qh-muted);font-size:13px}
+.qh-custom-range input{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;height:48px;padding:0 12px;border:1px solid #93aaad;border-radius:8px;background:#fff;color:var(--qh-text);font-size:16px;line-height:normal;-webkit-appearance:none;appearance:none}
+.qh-custom-range input::-webkit-date-and-time-value{margin:0;text-align:center;line-height:46px}
+.qh-custom-range input::-webkit-datetime-edit{padding:0;line-height:46px}
+.qh-custom-range input:focus-visible{outline:2px solid var(--qh-green);outline-offset:2px}
+.qh-custom-range>button{height:48px}
+#home-range-error{grid-column:1/-1;margin:0;font-size:14px;color:#a52c28}
+#home-range-error:empty{display:none}
+.qh-overview{padding:20px;border:1px solid var(--qh-line);border-radius:12px;background:#fff}
+.qh-analytics-head{margin-bottom:20px;flex-wrap:wrap;gap:4px}
+.qh-analytics-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:28px}
+.qh-stats{grid-template-columns:1fr;gap:0;padding:8px 20px;align-content:center;border-radius:8px;background:#e8f3f0}
+.qh-stats>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #c6ded7}
+.qh-stats>div:last-child{border-bottom:0}
+.qh-stats dt{color:#355e59;font-size:14px}
+.qh-stats dd{margin:0;color:#12584f;font-size:28px;line-height:1.2}
+.qh-stats small{margin-left:6px;font-size:13px;font-weight:400;color:#355e59}
+.qh-chart{min-width:0}
+.qh-chart-heading h3{margin:0;font-size:15px;font-weight:650}
+.qh-chart-heading>span{flex:none}
+.qh-bars{display:grid;gap:12px;margin:16px 0 8px;padding:0;list-style:none}
+.qh-bar-label{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px;font-size:14px}
+.qh-bar-label>span{overflow-wrap:anywhere;min-width:0}
+.qh-bar-label b{flex:none;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.qh-bar-track{height:10px;background:#edf1f3;border-radius:3px;overflow:hidden}
+.qh-bar-track>div{height:100%;background:#568c98;border-radius:3px}
+.qh-bars li:first-child .qh-bar-track>div{background:#126660}
+.qh-chart-scale{display:flex;justify-content:space-between;font-size:12px;color:var(--qh-muted);font-variant-numeric:tabular-nums}
+.qh-chart-note{margin:12px 0 0;color:var(--qh-muted);font-size:13px;line-height:1.5}
+.qh-chart-empty{margin:20px 0;color:var(--qh-muted);font-size:14px}
+.qh-chart-toggle{min-height:44px;padding:8px 0;border:0;background:transparent;color:var(--qh-green);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:4px}
+.qh-primary:hover{background:#0c514c}
+.qh-home ::selection{background:#c8e5dd;color:#203c45}
+.qh-mobile-dock{background:#f5f7f6}
+@media(max-width:699px){
+ .qh-time-filter{margin-bottom:16px}.qh-filter-title{flex-wrap:wrap;gap:4px}.qh-filter-title span{font-size:13px}
+ .qh-periods{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+ .qh-periods button{min-width:0;padding:8px 2px;font-size:13px}
+ .qh-custom-range{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.qh-custom-range>button{grid-column:1/-1}
+ .qh-overview{padding:16px}.qh-analytics-head{margin-bottom:16px}
+ .qh-analytics-grid{grid-template-columns:minmax(0,1fr);gap:20px}
+ .qh-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:16px 12px}
+ .qh-stats>div{display:block;padding:0;border-bottom:0;min-width:0}.qh-stats dt{font-size:13px}.qh-stats dd{margin-top:8px;font-size:24px}.qh-stats small{margin-left:3px;font-size:12px}
+ .qh-storage-note{margin-bottom:20px}.qh-chart-heading h3{font-size:15px}
+}
