@@ -1,5 +1,13 @@
 # Homepage refinement — v23
 
+## v24 color and analytics extension
+
+UI UX Designer color guidance: warm neutral canvas #f5f7f6, white surfaces, primary deep teal #126660, text #203c45, secondary blue-gray #526773, soft teal #e8f3f0. Retain the supplied Zhonghe logo. Body text contrast target ≥4.5:1. Use system Chinese fonts, 13/14/16/18/24/28px type scale. No dark theme requested.
+
+Time presets apply to quoteDate (not creation, modification or expiration): all, month-to-date, last 30/90 calendar days including today, or inclusive custom start/end. Missing quote dates are retained for all-time and excluded for bounded dates. Invalid/inverted custom ranges show an error and preserve the previous applied range. All analytics and records also follow the search keyword. Filters are session-only and do not modify quote data.
+
+Category bars count quotation records containing each product.name, deduplicated per quotation. Custom product names remain under their stored product category. Multi-category quotations count once in each category, so category totals may exceed quote totals; no misleading percentage shares. Show top five sorted by count, with expansion for remaining categories and literal counts. Empty datasets have a clear zero-data state.
+
 Scope: quotation list/homepage only. Preserve editing, export, storage and backup merge behavior. This is an Operate surface for a Chinese business quotation tool, used on phone and desktop.
 
 Keep the Zhonghe logo and dark-green identity. The logo viewport removes only the source JPG's white margins; all artwork is retained. Use local system Chinese fonts for readability and offline reliability. No external font dependencies.
