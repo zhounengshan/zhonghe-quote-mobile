@@ -6,11 +6,15 @@ topbar=function(title='报价工作台',back=false){
   return `<header class="topbar">${back?'<button class="icon-btn" data-action="back" aria-label="返回">←</button>':'<div class="brandmark">中</div>'}<div class="brandcopy"><strong>${esc(title)}</strong><small>ZHONGHE QUOTE STUDIO</small></div><span class="company-badge">中禾工艺</span></header>`
 };
 
-renderList=function(){
+renderList=function({resultsOnly=false}={}){
   const all=store.state?.quotes||[],k=store.keyword.trim().toLowerCase();
   const list=all.filter(q=>!k||[q.number,q.customer,q.contact,...(q.products||[]).flatMap(p=>[p.name,p.customName])].join(' ').toLowerCase().includes(k)).sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')));
   const month=today().slice(0,7),monthCount=all.filter(q=>String(q.quoteDate||'').startsWith(month)).length,productCount=all.reduce((n,q)=>n+(q.products||[]).length,0);
   const cards=list.map(q=>{const products=q.products||[],pc=products.reduce((n,p)=>n+(p.prices||[]).length,0);return `<article class="quote-card" data-open="${esc(q.id)}"><div class="card-top"><div><div class="quote-no">${esc(q.number)}</div><div class="customer">${esc(q.customer||'客户未填写')}</div></div><span class="pill ordered">已保存</span></div><div class="products">${esc(products.map(displayName).filter(Boolean).join('、')||'产品未填写')}</div><div class="meta"><span>报价 ${esc(q.quoteDate||'未填写')} · 有效期 ${esc(q.validUntil||'未填写')}</span><span>${products.length} 个产品 · ${pc} 档价格</span></div><div class="card-actions"><button class="secondary" data-action="edit" data-id="${q.id}">修改</button><button class="ghost" data-action="duplicate" data-id="${q.id}">复制</button><button class="primary" data-action="export" data-id="${q.id}">保存图片</button></div></article>`}).join('');
+  if(resultsOnly&&document.querySelector('.quote-list')){
+    document.querySelector('.quote-list').innerHTML=cards||'<div class="empty">暂无符合条件的报价</div>';
+    return;
+  }
   document.querySelector('#app').innerHTML=shell(`<section class="hero quote-only-hero"><div class="hero-eyebrow">ZHONGHE QUOTATION</div><h1>专业报价，传递公司价值</h1><p>专注报价制作与客户版图片输出，资料保存在当前设备，打开即可使用。</p><div class="stats"><div class="stat"><b>${all.length}</b><span>报价档案</span></div><div class="stat"><b>${monthCount}</b><span>本月新增</span></div><div class="stat"><b>${productCount}</b><span>产品项目</span></div></div></section><div class="workspace-note">无需登录 · 本机保存 · 一键生成客户版图片</div><div class="toolbar"><label class="search">⌕<input id="search" value="${esc(store.keyword)}" placeholder="搜索单号、客户、产品"></label><button class="primary" data-action="create">＋ 新建报价</button></div><section class="quote-list">${cards||'<div class="empty">暂无报价，点击“新建报价”开始制作</div>'}</section><button class="fab" data-action="create">＋ 新建报价</button>`,'报价工作台')
 };
 
