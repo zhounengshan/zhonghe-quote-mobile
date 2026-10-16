@@ -1,3 +1,9 @@
+// Release numeric focus before the browser's wheel default action, while
+// leaving native page scrolling and keyboard/input validation intact.
+document.addEventListener('wheel',()=>{
+  const input=document.activeElement;
+  if(input instanceof HTMLInputElement&&input.type==='number')input.blur();
+},{capture:true,passive:true});
 const q6Money=v=>money(v);
 const q6Value=(p,key)=>p[key]||'-';
 renderDetailV2=function(){
