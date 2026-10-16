@@ -134,7 +134,28 @@ function exportPngV2(q){
 }
 
 document.addEventListener('submit',async e=>{if(e.target.id==='login'){e.preventDefault();const fd=new FormData(e.target);try{await request('/api/auth/login',{method:'POST',body:JSON.stringify({username:fd.get('username'),password:fd.get('password')})});store.mode='live';localStorage.setItem('zhq_mode','live');await loadState();render()}catch(err){toast(err.message)}}if(e.target.id==='quote-form'){e.preventDefault();await saveQuote()}});
-document.addEventListener('input',e=>{if(e.target.id==='search'){store.keyword=e.target.value;const pos=store.keyword.length;renderList();const next=$('#search');next.focus();next.setSelectionRange(pos,pos)}if(e.target.matches('input,select,textarea')&&store.view==='edit')snapshot()});
+// Keep the search field mounted so IME candidates, focus and caret survive filtering.
+const composingSearchInputs=new WeakSet();
+function updateQuoteSearch(input){
+  if(store.keyword===input.value)return;
+  store.keyword=input.value;
+  renderList({resultsOnly:true});
+}
+document.addEventListener('compositionstart',e=>{
+  if(e.target.id==='search')composingSearchInputs.add(e.target);
+});
+document.addEventListener('compositionend',e=>{
+  if(e.target.id!=='search')return;
+  composingSearchInputs.delete(e.target);
+  updateQuoteSearch(e.target);
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='search'){
+    if(!e.isComposing&&!composingSearchInputs.has(e.target))updateQuoteSearch(e.target);
+    return;
+  }
+  if(e.target.matches('input,select,textarea')&&store.view==='edit')snapshot();
+});
 document.addEventListener('change',e=>{if(e.target.matches('[data-upload]'))handleUpload(e.target);if(store.view==='edit'&&e.target.matches('select')){snapshot();if(/(name|material|customerSource|noteOption|refundable)$/.test(e.target.name))renderEdit()}});
 document.addEventListener('click',async e=>{const status=e.target.closest('[data-status]');if(status){store.status=status.dataset.status;renderList();return}const open=e.target.closest('[data-open]');if(open&&!e.target.closest('button')){store.id=open.dataset.open;store.view='detail';render();return}const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action,id=b.dataset.id;if(a==='demo'){store.mode='demo';localStorage.setItem('zhq_mode','demo');await loadState();render()}else if(a==='logout'){try{await request('/api/auth/logout',{method:'POST'})}catch{}store.mode='';store.state=null;localStorage.removeItem('zhq_mode');render()}else if(a==='back'){if(store.view==='edit')snapshot();store.view=store.id?'detail':'list';render()}else if(a==='create'){editing=emptyQuote();store.id='';store.view='edit';render()}else if(a==='edit'){const q=store.state.quotes.find(x=>String(x.id)===String(id));editing=clone(q);editing.products=editing.products?.length?editing.products:[emptyProduct()];store.id=id;store.view='edit';render()}else if(a==='detail'){store.id=id;store.view='detail';render()}else if(a==='add-product'){snapshot();editing.products.push(emptyProduct());renderEdit()}else if(a==='remove-product'){snapshot();editing.products.splice(Number(b.dataset.index),1);renderEdit()}else if(a==='add-price'){snapshot();editing.products[Number(b.dataset.product)].prices.push({quantity:'',unitPrice:''});renderEdit()}else if(a==='remove-price'){snapshot();const p=editing.products[Number(b.dataset.product)];if(p.prices.length===1)return toast('至少保留一档价格');p.prices.splice(Number(b.dataset.index),1);renderEdit()}else if(a==='remove-photo'){snapshot();editing.products[Number(b.dataset.product)][b.dataset.type].splice(Number(b.dataset.index),1);renderEdit()}else if(a==='delete'){const q=store.state.quotes.find(x=>String(x.id)===String(id));if(await confirmBox('删除报价',`确认永久删除「${q?.number||q?.customer||'这条报价'}」吗？`,'删除')){store.state.quotes=store.state.quotes.filter(x=>String(x.id)!==String(id));try{await persist();store.id='';store.view='list';render();toast('已删除')}catch(err){toast(err.message)}}}else if(a==='duplicate'){const q=clone(store.state.quotes.find(x=>String(x.id)===String(id)));q.id=uid('q');q.number=quoteNumber();q.status='保存草稿';q.quoteDate=today();q.validUntil=addDays(30);q.createdAt=q.updatedAt=new Date().toISOString();store.state.quotes.unshift(q);try{await persist();editing=clone(q);store.id=q.id;store.view='edit';render();toast('已复制为新草稿')}catch(err){toast(err.message)}}else if(a==='status'){const q=store.state.quotes.find(x=>String(x.id)===String(id)),s=await chooseStatus(q);if(s){q.status=s;q.updatedAt=new Date().toISOString();try{await persist();render();toast('状态已更新')}catch(err){toast(err.message)}}}else if(a==='export'){const q=store.state.quotes.find(x=>String(x.id)===String(id));exportPng(q)}else if(a==='print')window.print()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-seg] button');if(!b)return;snapshot();const root=b.closest('[data-seg]'),parts=root.dataset.seg.split('.'),p=editing.products[Number(parts[1])];p[parts[2]]=b.dataset.value;renderEdit()});
