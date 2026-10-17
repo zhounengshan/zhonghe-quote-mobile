@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中禾报价管理系统</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI','PingFang SC',Roboto,'Helvetica Neue',sans-serif; background:#f0f2f5; color:#333; height:100vh; display:flex; overflow:hidden; }
+        a { text-decoration:none; color:inherit; }
+        button { cursor:pointer; border:none; outline:none; font-family:inherit; }
+        input, select, textarea { font-family:inherit; outline:none; border:1px solid #d9d9d9; border-radius:6px; padding:6px 12px; font-size:14px; transition:0.2s; background:#fff; }
+        input:focus, select:focus, textarea:focus { border-color:#2b7be4; box-shadow:0 0 0 3px rgba(43,123,228,0.15); }
+        textarea { resize:vertical; min-height:38px; width:100%; }
+        .sidebar { width:200px; background:#1a2332; color:#c8d0dc; display:flex; flex-direction:column; flex-shrink:0; height:100vh; position:sticky; top:0; overflow-y:auto; z-index:100; }
+        .sidebar-brand { padding:24px 20px 16px; font-size:18px; font-weight:700; color:#fff; border-bottom:1px solid #2c3a4f; display:flex; align-items:center; gap:10px; }
+        .sidebar-brand span { font-size:22px; }
+        .sidebar-brand small { font-size:12px; font-weight:400; color:#8a9bb5; margin-left:4px; }
+        .sidebar-nav { flex:1; padding:16px 0; }
+        .sidebar-nav .nav-item { display:flex; align-items:center; gap:12px; padding:12px 20px; margin:2px 8px; border-radius:8px; font-size:14px; font-weight:500; color:#b0bed0; transition:0.2s; cursor:pointer; }
+        .sidebar-nav .nav-item:hover { background:#2a3a50; color:#fff; }
+        .sidebar-nav .nav-item.active { background:#2b7be4; color:#fff; box-shadow:none; }
+        .sidebar-nav .nav-item .icon { font-size:18px; width:28px; text-align:center; }
+        .sidebar-footer { padding:16px 20px; border-top:1px solid #2c3a4f; font-size:12px; color:#6a7b94; text-align:center; }
+        .main { flex:1; height:100vh; overflow-y:auto; padding:24px 32px 32px; background:#f0f2f5; }
+        .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+        .page-header h2 { font-size:24px; font-weight:700; color:#1a2332; }
+        .page-header .actions { display:flex; gap:10px; flex-wrap:wrap; }
+        .card { background:#fff; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,0.06); padding:20px 24px; margin-bottom:20px; }
+        .card-title { font-size:16px; font-weight:600; color:#1a2332; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
+        .table-wrap { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; font-size:14px; }
+        table th { background:#f7f9fc; color:#4a5a72; font-weight:600; padding:10px 12px; text-align:left; border-bottom:2px solid #e4e8ef; white-space:nowrap; }
+        table td { padding:10px 12px; border-bottom:1px solid #eaedf3; vertical-align:middle; }
+        table tr:hover td { background:#f8faff; }
+        .text-muted { color:#8a9bb5; }
+        .text-center { text-align:center; }
+        .text-right { text-align:right; }
+        .text-left { text-align:left; }
+        .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 18px; border-radius:8px; font-size:14px; font-weight:500; transition:0.2s; border:none; cursor:pointer; background:#e8ecf1; color:#1a2332; }
+        .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+        .btn-primary { background:#2b7be4; color:#fff; }
+        .btn-primary:hover { background:#1f6acf; }
+        .btn-success { background:#22a67e; color:#fff; }
+        .btn-success:hover { background:#1a8f6b; }
+        .btn-danger { background:#e74c5e; color:#fff; }
+        .btn-danger:hover { background:#d43a4c; }
+        .btn-warning { background:#f5a623; color:#fff; }
+        .btn-warning:hover { background:#e0951a; }
+        .btn-outline { background:transparent; border:1.5px solid #d9d9d9; color:#4a5a72; }
+        .btn-outline:hover { background:#f5f7fa; border-color:#b0bed0; }
+        .btn-sm { padding:4px 12px; font-size:12px; border-radius:6px; }
+        .btn-xs { padding:2px 8px; font-size:11px; border-radius:4px; }
+        .form-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px 20px; }
+        .form-group { display:flex; flex-direction:column; gap:4px; }
+        .form-group label { font-size:13px; font-weight:500; color:#4a5a72; }
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:16px; margin-bottom:24px; }
+        .stat-card { background:#fff; border-radius:12px; padding:20px 20px 16px; box-shadow:0 1px 4px rgba(0,0,0,0.06); text-align:center; }
+        .stat-card .number { font-size:32px; font-weight:700; color:#1a2332; }
+        .stat-card .label { font-size:14px; color:#6a7b94; margin-top:4px; }
+        .stat-card .icon-bg { font-size:28px; margin-bottom:4px; }
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.40); backdrop-filter:blur(4px); display:none; justify-content:center; align-items:center; z-index:999; padding:20px; }
+        .modal-overlay.show { display:flex; }
+        .modal { background:#fff; border-radius:16px; padding:28px 32px 24px; max-width:1000px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:modalIn 0.25s ease; }
+        @keyframes modalIn { from { opacity:0; transform:scale(0.94) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        .modal-header h3 { font-size:20px; font-weight:700; color:#1a2332; }
+        .modal-close { background:none; font-size:24px; color:#8a9bb5; cursor:pointer; padding:0 4px; line-height:1; }
+        .modal-close:hover { color:#1a2332; }
+        .modal-footer { margin-top:20px; display:flex; justify-content:flex-end; gap:10px; padding-top:16px; border-top:1px solid #eaedf3; }
+        .quote-preview { background:#fff; border-radius:12px; padding:30px 32px; box-shadow:0 1px 6px rgba(0,0,0,0.06); margin-top:12px; font-size:14px; }
+        .quote-preview .header { display:flex; justify-content:space-between; align-items:start; border-bottom:2px solid #1a2332; padding-bottom:16px; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+        .quote-preview .header .company { font-size:22px; font-weight:700; color:#1a2332; }
+        .quote-preview .header .company small { font-weight:400; font-size:14px; color:#6a7b94; display:block; margin-top:4px; }
+        .quote-preview table th { background:#f0f4fa; }
+        .quote-preview .total-row { font-weight:700; background:#f7f9fc; }
+        .quote-preview .total-row td { border-top:2px solid #1a2332; }
+        .hidden { display:none !important; }
+        .tag { display:inline-block; padding:2px 12px; border-radius:12px; font-size:12px; font-weight:500; background:#e8ecf1; color:#4a5a72; }
+        .tag-success { background:#d4f0e6; color:#1a8f6b; }
+        .tag-warning { background:#fef0d6; color:#b87a0e; }
+        .tag-danger { background:#fde8ec; color:#c0392b; }
+        .tag-info { background:#d6eaf8; color:#1a6fa0; }
+        .tag-expired { background:#fde8ec; color:#c0392b; animation:blink 2s infinite; }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+        .flex { display:flex; }
+        .gap-8 { gap:8px; }
+        .gap-12 { gap:12px; }
+        .gap-16 { gap:16px; }
+        .img-thumbnails { display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
+        .img-thumb { width:50px; height:50px; object-fit:cover; border-radius:4px; border:1px solid #ddd; cursor:pointer; }
+        .img-thumb:hover { border-color:#2b7be4; }
+        .revision-timeline { border-left:2px solid #2b7be4; margin-left:12px; padding-left:20px; }
+        .revision-item { margin-bottom:16px; position:relative; }
+        .revision-item::before { content:''; position:absolute; left:-26px; top:4px; width:10px; height:10px; border-radius:50%; background:#2b7be4; border:2px solid #fff; }
+        .revision-item .time { font-size:12px; color:#8a9bb5; margin-bottom:4px; }
+        .revision-item .changes { font-size:13px; color:#4a5a72; }
+        .revision-item .change-row { background:#f7f9fc; padding:4px 8px; border-radius:4px; margin-top:2px; }
+        .revision-item .change-field { font-weight:600; color:#1a2332; }
+        .revision-item .change-old { color:#c0392b; text-decoration:line-through; }
+        .revision-item .change-new { color:#1a8f6b; }
+        .expired-banner { background:#fff5f5; border:1px solid #feb2b2; border-radius:8px; padding:12px 16px; margin-bottom:16px; color:#c0392b; }
+        .followup-banner { background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px 16px; margin-bottom:16px; color:#b87a0e; }
+        .multi-img-row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+        .img-version-badge { font-size:10px; background:#e8ecf1; color:#4a5a72; padding:1px 6px; border-radius:8px; }
+        .img-note-text { font-size:11px; color:#8a9bb5; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .expired-row td { background:#fff5f5 !important; }
+        .followup-row td { background:#fffbeb !important; }
+        @media (max-width:768px) {
+            .sidebar { width:56px; overflow:hidden; }
+            .sidebar-brand { font-size:14px; padding:16px 12px; justify-content:center; }
+            .sidebar-brand span { font-size:20px; }
+            .sidebar-brand small, .sidebar-brand .brand-text { display:none; }
+            .sidebar-nav .nav-item { padding:12px 14px; justify-content:center; }
+            .sidebar-nav .nav-item .label { display:none; }
+            .sidebar-nav .nav-item .icon { font-size:20px; width:auto; }
+            .sidebar-footer { display:none; }
+            .main { padding:16px; }
+            .form-grid { grid-template-columns:1fr 1fr; }
+            .modal { padding:20px; margin:10px; }
+            .quote-preview { padding:16px; }
+            .stats-grid { grid-template-columns:1fr 1fr; }
+        }
+        @media (max-width:480px) {
+            .form-grid { grid-template-columns:1fr; }
+            .stats-grid { grid-template-columns:1fr; }
+            .main { padding:12px; }
+            table th, table td { padding:6px 8px; font-size:12px; }
+        }
+        @media print {
+            @page { size: landscape !important; margin: 6mm !important; }
+            .sidebar, .page-header, .modal-footer, .modal-header, .modal-close, .btn, .no-print, .main > *:not(#quoteModal) { display: none !important; }
+            #quoteModal, #quoteModal .modal, .quote-preview { display: block !important; position: static !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; box-shadow: none !important; }
+            .quote-preview table { width: 100% !important; table-layout: auto !important; font-size: 9.5pt !important; border: 1px solid #ccc !important; }
+            .quote-preview table th, .quote-preview table td { padding: 4px 6px !important; word-break: break-word !important; border: 1px solid #ccc !important; text-align: center !important; }
+            .quote-preview table th { background: #f2f6fc !important; font-weight: 700 !important; }
+            .preview-img { max-width: 45px !important; max-height: 35px !important; object-fit: contain !important; }
+        }
+        .table-input { width:100%; min-width:60px; box-sizing:border-box; padding:4px 6px; font-size:13px; }
+        .table-textarea { width:100%; min-width:80px; box-sizing:border-box; padding:4px 6px; font-size:13px; min-height:36px; resize:vertical; text-align:left !important; }
+        #quoteItemsBody td:nth-child(6) .table-textarea { text-align:left !important; }
+        .preview-table th { background:#f2f6fc; font-weight:600; color:#1a2332; }
+        .preview-table td { padding:8px 10px; }
+        .preview-table td { white-space:pre-wrap; word-break:break-word; }
+        .preview-table .total-row td { background:#f8fafc; font-weight:700; }
+        .filter-box { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; padding-bottom:16px; border-bottom:1px solid #eaedf3; margin-bottom:16px; }
+        .filter-item { display:flex; flex-direction:column; gap:4px; }
+        .filter-item label { font-size:13px; font-weight:500; color:#4a5a72; }
+        .filter-item input, .filter-item select { min-width:150px; padding:6px 10px; }
+        .filter-actions { display:flex; gap:8px; margin-left:auto; }
+        #quoteModal .modal { max-width:1320px !important; min-width:0 !important; width:calc(100vw - 32px) !important; overflow:hidden !important; padding:18px 18px 14px !important; }
+        #quoteDetailContent { width:100%; overflow:hidden !important; padding:0 !important; box-shadow:none !important; margin-top:0 !important; }
+        .quote-preview-wrap { width:100%; overflow:hidden; background:#eef1f5; border-radius:4px; padding:14px 0 18px; }
+        /* ===== 专业版报价单预览：A4 横向宽版 + 自适应缩放 ===== */
+        #quoteModal .modal { max-width: none !important; width: min(96vw, 1720px) !important; min-width: 0 !important; padding: 16px 18px 14px !important; overflow: hidden !important; }
+        #quoteDetailContent { width:100%; overflow:hidden !important; padding:0 !important; box-shadow:none !important; margin-top:0 !important; }
+        .quote-preview-wrap { width:100%; overflow:hidden; background:#e9edf3; border-radius:6px; padding:18px 0 22px; }
+        .quote-preview-fit { width:1500px; box-sizing:border-box; transform-origin:top left; margin:0 auto; background:#fff; border-radius:0; padding:28px 30px 24px; box-shadow:0 2px 10px rgba(20,32,50,.14); font-size:13px; color:#20252b; }
+        .quote-preview-fit .header { display:grid !important; grid-template-columns:minmax(0,1fr) minmax(430px,520px) !important; grid-template-rows:auto auto auto !important; align-items:center !important; column-gap:48px !important; row-gap:5px !important; padding:0 0 14px !important; margin:0 !important; border-bottom:0 !important; flex-wrap:nowrap !important; }
+        .quote-preview-fit .header > div:first-child { display:contents !important; }
+        .quote-preview-fit .header .company { grid-column:1; grid-row:1; font-size:34px !important; font-weight:800 !important; letter-spacing:.5px; line-height:1.15 !important; color:#080808 !important; white-space:nowrap !important; }
+        .quote-preview-fit .header .company small { grid-column:1; grid-row:2 / span 2; display:block !important; margin-top:2px !important; font-size:15px !important; font-weight:400 !important; color:#60666e !important; line-height:1.75 !important; }
+        .quote-preview-fit .header .info { grid-column:2; grid-row:1 / span 3; text-align:right !important; color:#555b63 !important; font-size:15px !important; line-height:1.85 !important; align-self:start !important; padding-top:1px !important; }
+        .quote-preview-fit .header .info > div { min-height:27px; }
+        .quote-preview-fit .header .info strong { color:#111 !important; font-weight:600 !important; }
+        .quote-preview-fit .header .info > div:last-child { margin-top:2px; padding-top:0; border-top:0; }
+        .quote-preview-fit .header::after { content:''; grid-column:1 / -1; grid-row:4; height:4px; background:#111; margin-top:10px; }
+        /* ===== 报价单专业化升级 ===== */
+        .quote-preview-fit .quote-doc-title {
+            text-align:center !important;
+            margin:2px 0 13px !important;
+            padding-bottom:10px !important;
+            border-bottom:1px solid #d9dee6 !important;
+        }
+        .quote-preview-fit .quote-doc-title .cn {
+            display:block !important;
+            font-size:22px !important;
+            font-weight:800 !important;
+            letter-spacing:5px !important;
+            color:#111 !important;
+            line-height:1.25 !important;
+        }
+        .quote-preview-fit .quote-doc-title .en {
+            display:block !important;
+            margin-top:3px !important;
+            font-size:10px !important;
+            letter-spacing:3px !important;
+            color:#8a929d !important;
+            font-weight:600 !important;
+        }
+        .quote-preview-fit .quote-customer-bar {
+            background:#fafbfd !important;
+            border:1px solid #d8dee7 !important;
+            border-radius:4px !important;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.8) !important;
+        }
+        .quote-preview-fit .quote-customer-bar > div {
+            min-height:28px !important;
+            display:flex !important;
+            align-items:center !important;
+            line-height:1.45 !important;
+        }
+        .quote-preview-fit .quote-customer-bar > div:not(:last-child) {
+            border-right:1px solid #e1e5eb !important;
+            padding-right:14px !important;
+        }
+        .quote-preview-fit .quote-customer-bar strong {
+            color:#18202b !important;
+        }
+        .quote-preview-fit .quote-validity {
+            display:inline-flex !important;
+            align-items:center !important;
+            gap:8px !important;
+            padding:3px 10px !important;
+            border:1px solid #cfd7e2 !important;
+            border-radius:4px !important;
+            background:#f7f9fc !important;
+        }
+        .quote-preview-fit .quote-validity-label {
+            color:#697586 !important;
+            font-size:12px !important;
+            font-weight:500 !important;
+        }
+        .quote-preview-fit .quote-validity strong {
+            color:#172033 !important;
+        }
+        .quote-preview-fit .quote-top-remark {
+            border-left:4px solid #596b82 !important;
+            border-top:1px solid #e0e4e9 !important;
+            border-right:1px solid #e0e4e9 !important;
+            border-bottom:1px solid #e0e4e9 !important;
+            border-radius:3px !important;
+        }
+        .quote-preview-fit .quote-footer-note {
+            border-top:1px solid #dfe3e8 !important;
+            padding-top:10px !important;
+            margin-top:18px !important;
+            line-height:1.6 !important;
+        }
+
+        .quote-preview-fit .quote-top-remark { margin:10px 0 8px !important; padding:8px 12px !important; border-left:3px solid #7f8fa6 !important; background:#f7f8fa !important; color:#555 !important; font-size:13px !important; }
+        .quote-preview-fit .quote-customer-bar { display:grid; grid-template-columns:1.8fr .8fr 1.2fr 1fr; gap:18px; align-items:center; margin:11px 0 12px; padding:9px 12px; background:#f7f8fa; border:1px solid #e1e5ea; font-size:13px; color:#555; }
+        .quote-preview-fit .quote-customer-bar strong { color:#222; }
+        .quote-preview table { width:100% !important; table-layout:fixed !important; border-collapse:collapse !important; background:#fff !important; border:1px solid #bfc6cf !important; }
+        .quote-preview table th { padding:11px 6px !important; background:#d8e2f2 !important; border:1px solid #c4ccd6 !important; color:#111 !important; font-size:13px !important; font-weight:700 !important; text-align:center !important; line-height:1.25 !important; white-space:nowrap !important; vertical-align:middle !important; }
+        .quote-preview table td { padding:9px 8px !important; border:1px solid #d8dde4 !important; color:#333 !important; font-size:13px !important; line-height:1.45 !important; vertical-align:middle !important; word-break:break-word !important; overflow-wrap:anywhere !important; }
+        .quote-preview table tbody tr:nth-child(even):not(.total-row) td { background:#fcfdff !important; }
+        .quote-preview table .text-center { text-align:center !important; vertical-align:middle !important; }
+        .quote-preview table .numeric { white-space:nowrap !important; font-weight:500 !important; }
+        /* 报价预览：数量/单价/模具版费/合计/工期五列统一水平、垂直居中，避免多行内容导致视觉错位 */
+        .quote-preview-fit .preview-table th:nth-child(7),
+        .quote-preview-fit .preview-table td:nth-child(7),
+        .quote-preview-fit .preview-table th:nth-child(8),
+        .quote-preview-fit .preview-table td:nth-child(8),
+        .quote-preview-fit .preview-table th:nth-child(9),
+        .quote-preview-fit .preview-table td:nth-child(9),
+        .quote-preview-fit .preview-table th:nth-child(10),
+        .quote-preview-fit .preview-table td:nth-child(10),
+        .quote-preview-fit .preview-table th:nth-child(11),
+        .quote-preview-fit .preview-table td:nth-child(11) {
+            text-align:center !important;
+            vertical-align:middle !important;
+            line-height:1.45 !important;
+        }
+        .quote-preview-fit .preview-table th:nth-child(7),
+        .quote-preview-fit .preview-table th:nth-child(8),
+        .quote-preview-fit .preview-table th:nth-child(9),
+        .quote-preview-fit .preview-table th:nth-child(10),
+        .quote-preview-fit .preview-table th:nth-child(11) {
+            white-space:nowrap !important;
+        }
+        .quote-preview table .total-row td { background:#d8e2f2 !important; font-weight:700 !important; border-top:2px solid #111 !important; border-bottom:1px solid #bfc6cf !important; font-size:18px !important; color:#111 !important; height:58px !important; padding:0 20px !important; }
+        /* 预览表：所有13列统一水平/垂直居中，避免不同内容高度造成视觉错位 */
+        .quote-preview-fit .preview-table th,
+        .quote-preview-fit .preview-table td {
+            text-align:center !important;
+            vertical-align:middle !important;
+        }
+        .quote-preview-fit .preview-table td > * {
+            vertical-align:middle;
+        }
+        .quote-preview-fit .preview-table td:not(:has(.multi-img-row)):not(:has(.preview-img)) {
+            line-height:1.45 !important;
+        }
+        .quote-preview-fit .preview-table .multi-img-row {
+            width:100%;
+            display:flex !important;
+            justify-content:center !important;
+            align-items:center !important;
+            flex-wrap:wrap;
+        }
+        .quote-preview-fit .preview-table .multi-img-row > div {
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+        }
+        /* 总额行直接使用真实表格列，确保“报价总额”与“合计”列精准对齐 */
+        .quote-preview table .total-row td {
+            text-align:center !important;
+            vertical-align:middle !important;
+            white-space:nowrap !important;
+        }
+        .quote-preview table .total-row .total-label {
+            letter-spacing:2px;
+            font-size:18px !important;
+            font-weight:700 !important;
+        }
+        .quote-preview table .total-row .total-amount {
+            font-size:18px !important;
+            letter-spacing:.4px;
+            font-weight:700 !important;
+        }
+        /* 13 列：材质、规格明确分开 */
+        .quote-preview table th:nth-child(1), .quote-preview table td:nth-child(1) { width:48px !important; }
+        .quote-preview table th:nth-child(2), .quote-preview table td:nth-child(2) { width:105px !important; }
+        .quote-preview table th:nth-child(3), .quote-preview table td:nth-child(3) { width:180px !important; }
+        .quote-preview table th:nth-child(4), .quote-preview table td:nth-child(4) { width:95px !important; }
+        .quote-preview table th:nth-child(5), .quote-preview table td:nth-child(5) { width:120px !important; }
+        .quote-preview table th:nth-child(6), .quote-preview table td:nth-child(6) { width:170px !important; }
+        .quote-preview table th:nth-child(7), .quote-preview table td:nth-child(7) { width:72px !important; }
+        .quote-preview table th:nth-child(8), .quote-preview table td:nth-child(8) { width:92px !important; }
+        .quote-preview table th:nth-child(9), .quote-preview table td:nth-child(9) { width:105px !important; }
+        .quote-preview table th:nth-child(10), .quote-preview table td:nth-child(10) { width:105px !important; }
+        .quote-preview table th:nth-child(11), .quote-preview table td:nth-child(11) { width:82px !important; }
+        .quote-preview table th:nth-child(12), .quote-preview table td:nth-child(12) { width:125px !important; }
+        .quote-preview table th:nth-child(13), .quote-preview table td:nth-child(13) { width:125px !important; }
+        .quote-preview-fit .quote-sample { margin-top:16px !important; border-top:1px solid #d7dce3 !important; padding-top:12px !important; }
+        .quote-preview-fit .quote-section-title { font-weight:700; font-size:14px; margin-bottom:7px; }
+        .quote-preview-fit .sample-line { display:flex; gap:24px; flex-wrap:wrap; font-size:12px; margin-bottom:5px; color:#444; }
+        .quote-preview-fit .quote-footer-note { margin-top:14px; font-size:11px; color:#9299a3; text-align:center; }
+        .preview-img, #quoteModal .preview-img, #quoteDetailContent .preview-img { width:100px !important; height:70px !important; max-width:100px !important; max-height:70px !important; object-fit:contain !important; display:block !important; margin:0 auto !important; border-radius:3px !important; border:1px solid #d7dce3 !important; background:#fafbfc !important; }
+        .multi-img-row { display:flex !important; gap:5px !important; justify-content:center !important; flex-wrap:wrap !important; align-items:flex-start !important; }
+        .multi-img-row > div { width:104px !important; text-align:center !important; }
+        .img-version-badge { display:inline-block !important; margin-top:2px !important; font-size:9px !important; padding:1px 5px !important; border-radius:8px !important; background:#eef1f5 !important; color:#758298 !important; }
+        @media (max-width:900px) {
+            #quoteModal .modal { width:calc(100vw - 20px) !important; padding:10px !important; }
+            .quote-preview-wrap { padding:10px 0 14px; }
+        }
+        #authOverlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#eef4ff,#f7f9fc);display:flex;align-items:center;justify-content:center;font-family:inherit;}
+        #authCard{width:min(420px,calc(100vw - 36px));background:#fff;border-radius:18px;box-shadow:0 18px 60px rgba(25,55,95,.16);padding:34px;}
+        #authCard h1{margin:0 0 8px;font-size:25px;color:#20324d;} .auth-sub{color:#718096;font-size:14px;margin-bottom:26px;}
+        .auth-group{margin-bottom:16px}.auth-group label{display:block;font-size:13px;color:#53657d;margin-bottom:7px}.auth-group input{width:100%;box-sizing:border-box;padding:12px 13px;border:1px solid #d8e0ea;border-radius:9px;font-size:15px;outline:none}.auth-group input:focus{border-color:#4b8cf8;box-shadow:0 0 0 3px rgba(75,140,248,.1)}
+        #authSubmit{width:100%;padding:12px;border:0;border-radius:9px;background:#3578e5;color:#fff;font-size:15px;font-weight:600;cursor:pointer}.auth-error{min-height:20px;color:#d64545;font-size:13px;margin:8px 0 12px}.auth-note{font-size:12px;color:#8795a8;margin-top:16px;line-height:1.6}
+        #authUserBadge{display:none;align-items:center;justify-content:space-between;gap:8px;margin:12px 10px 10px;padding:9px 10px;background:#25344a;border:1px solid #34465f;border-radius:9px;font-size:12px;color:#dbe5f2}#authLogout{border:0;background:#2b7be4;color:#fff;cursor:pointer;font-size:12px;padding:5px 9px;border-radius:6px;white-space:nowrap}#authLogout:hover{background:#1f6acf}
+    
+        .quote-table-no-spinner::-webkit-outer-spin-button,.quote-table-no-spinner::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.quote-table-no-spinner{-moz-appearance:textfield}
+        .img-thumb-wrap{position:relative;display:inline-block;margin:2px}.img-thumb-wrap .img-thumb{margin:0!important}.img-delete-btn{position:absolute;right:-5px;top:-5px;width:20px;height:20px;border:0;border-radius:50%;background:#d64545;color:#fff;font-size:13px;line-height:20px;padding:0;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2);z-index:2}.img-delete-btn:hover{background:#b92d2d}
+        .recovery-code-box{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2px;font-size:20px;font-weight:700;text-align:center;padding:14px;background:#f5f8fc;border:1px dashed #9fb2ca;border-radius:8px;margin:10px 0}
+    
+/* ===== 商务高级版：深海军蓝 + 香槟金 ===== */
+:root{
+  --biz-navy:#16283f;
+  --biz-navy-2:#203b5d;
+  --biz-gold:#b58a45;
+  --biz-gold-light:#f5efe4;
+  --biz-ink:#182231;
+  --biz-muted:#6d7785;
+  --biz-line:#d9dee6;
+}
+
+/* 报价预览整体 */
+.quote-preview-fit{
+  color:var(--biz-ink) !important;
+  box-shadow:0 4px 18px rgba(16,31,50,.16) !important;
+}
+.quote-preview-fit .header{
+  border-bottom:0 !important;
+}
+.quote-preview-fit .header::after{
+  background:linear-gradient(90deg,var(--biz-navy) 0%,var(--biz-navy) 82%,var(--biz-gold) 82%,var(--biz-gold) 100%) !important;
+  height:5px !important;
+  margin-top:12px !important;
+}
+.quote-preview-fit .header .company{
+  color:var(--biz-navy) !important;
+  letter-spacing:1px !important;
+}
+.quote-preview-fit .header .company small{
+  color:var(--biz-muted) !important;
+}
+.quote-preview-fit .header .info{
+  color:#536171 !important;
+}
+.quote-preview-fit .header .info strong{
+  color:var(--biz-navy) !important;
+}
+
+/* 正式标题 */
+.quote-preview-fit .quote-doc-title{
+  margin:4px 0 15px !important;
+  padding:2px 0 12px !important;
+  border-bottom:1px solid var(--biz-line) !important;
+}
+.quote-preview-fit .quote-doc-title .cn{
+  color:var(--biz-navy) !important;
+  font-size:25px !important;
+  letter-spacing:8px !important;
+}
+.quote-preview-fit .quote-doc-title .en{
+  color:var(--biz-gold) !important;
+  font-size:10px !important;
+  letter-spacing:4px !important;
+}
+
+/* 客户信息栏 */
+.quote-preview-fit .quote-customer-bar{
+  background:#f8fafc !important;
+  border:1px solid #d6dce4 !important;
+  border-left:4px solid var(--biz-navy) !important;
+  border-radius:3px !important;
+  box-shadow:none !important;
+}
+.quote-preview-fit .quote-customer-bar strong{
+  color:var(--biz-navy) !important;
+}
+.quote-preview-fit .quote-validity{
+  border-color:#d9c6a5 !important;
+  background:var(--biz-gold-light) !important;
+}
+.quote-preview-fit .quote-validity-label{
+  color:#826838 !important;
+}
+.quote-preview-fit .quote-validity strong{
+  color:var(--biz-navy) !important;
+}
+
+/* 主表头：深海军蓝 */
+.quote-preview-fit .preview-table th{
+  background:var(--biz-navy) !important;
+  color:#fff !important;
+  border-color:#314963 !important;
+  font-weight:600 !important;
+  letter-spacing:.2px !important;
+}
+.quote-preview-fit .preview-table{
+  border-color:#aeb8c5 !important;
+}
+.quote-preview-fit .preview-table td{
+  border-color:#d9dee6 !important;
+}
+.quote-preview-fit .preview-table tbody tr:nth-child(even):not(.total-row) td{
+  background:#fafbfd !important;
+}
+
+/* 合计：金色强调，但不俗 */
+.quote-preview-fit .preview-table .total-row td{
+  background:#f5efe4 !important;
+  color:var(--biz-navy) !important;
+  border-top:2px solid var(--biz-navy) !important;
+  border-bottom:1px solid #d6c5a7 !important;
+  height:60px !important;
+}
+.quote-preview-fit .preview-table .total-row .total-label,
+.quote-preview-fit .preview-table .total-row .total-amount{
+  color:var(--biz-navy) !important;
+}
+.quote-preview-fit .preview-table .total-row .total-amount{
+  font-size:20px !important;
+  font-weight:800 !important;
+}
+
+/* ===== 打样信息：商务级重点模块 ===== */
+.quote-preview-fit .quote-sample{
+  margin-top:20px !important;
+  padding:0 !important;
+  border:1px solid #d9c6a5 !important;
+  border-radius:5px !important;
+  background:#fffdfa !important;
+  overflow:hidden !important;
+}
+.quote-preview-fit .quote-sample .quote-section-title{
+  position:relative;
+  margin:0 !important;
+  padding:11px 16px 10px 18px !important;
+  background:var(--biz-navy) !important;
+  color:#fff !important;
+  font-size:15px !important;
+  font-weight:700 !important;
+  letter-spacing:1px !important;
+}
+.quote-preview-fit .quote-sample .quote-section-title::before{
+  content:'';
+  display:inline-block;
+  width:4px;
+  height:15px;
+  margin-right:9px;
+  vertical-align:-2px;
+  background:var(--biz-gold);
+}
+.quote-preview-fit .sample-line .sample-remark{padding-left:12px;border-left:1px solid #e6dfd3;}.quote-preview-fit .quote-sample .quote-section-title::after{
+  content:'SAMPLE';
+  float:right;
+  color:#d9c6a5;
+  font-size:9px;
+  letter-spacing:2px;
+  font-weight:600;
+  margin-top:3px;
+}
+.quote-preview-fit .sample-line{
+  margin:0 !important;
+  padding:10px 16px !important;
+  display:grid !important;
+  grid-template-columns:260px 1fr 1fr 1fr 1fr 1.5fr !important;
+  gap:12px !important;
+  align-items:center !important;
+  border-top:1px solid #eee7db !important;
+  color:#3f4b59 !important;
+  font-size:12px !important;
+}
+.quote-preview-fit .sample-line:first-of-type{
+  border-top:0 !important;
+}
+.quote-preview-fit .sample-line strong{
+  color:var(--biz-navy) !important;
+  font-weight:700 !important;
+}
+.quote-preview-fit .sample-line span{
+  padding-left:12px;
+  border-left:1px solid #e6dfd3;
+}
+.quote-preview-fit .quote-footer-note{
+  color:#8a919a !important;
+  border-top:1px solid #dfe3e8 !important;
+}
+
+/* 编辑区的打样卡片也强化 */
+#quoteForm .card:has(.card-title){
+  --sample-navy:var(--biz-navy);
+}
+#quoteForm .card .card-title{
+  color:var(--biz-navy);
+}
+
+            .history-product-preview{display:flex;gap:5px;align-items:center;justify-content:center;min-width:120px;max-width:190px;}
+        .history-product-thumb{width:46px!important;height:46px!important;object-fit:contain!important;border:1px solid #d9dee6;border-radius:5px;background:#fafbfc;cursor:pointer;transition:.15s;display:block!important;margin:0!important;}
+        .history-product-thumb:hover{transform:scale(1.08);box-shadow:0 3px 10px rgba(0,0,0,.15);}
+        .history-product-empty{font-size:12px;color:#a0a7b0;white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<div id="authOverlay">
+  <div id="authCard">
+    <div style="font-size:38px;margin-bottom:8px">️</div>
+    <h1 id="authTitle">中禾报价 ERP</h1>
+    <div class="auth-sub" id="authSubtitle">本机版 · 数据保存在您的电脑</div>
+    <div id="authForm">
+      <div class="auth-group"><label>用户名</label><input id="authUsername" autocomplete="username" placeholder="请输入用户名"></div>
+      <div class="auth-group" id="authRecoveryCodeGroup" style="display:none"><label>密码找回码</label><input id="authRecoveryCode" autocomplete="off" placeholder="请输入找回码"></div><div class="auth-group"><label>密码</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="请输入密码"></div>
+      <div class="auth-group" id="authPassword2Group" style="display:none"><label>确认密码</label><input id="authPassword2" type="password" autocomplete="new-password" placeholder="再次输入密码"></div>
+      <div class="auth-error" id="authError"></div>
+      <button id="authSubmit" type="button">登 录</button>
+      <div style="text-align:center;margin-top:12px;font-size:13px;"><button type="button" onclick="showForgotPassword()" style="border:0;background:none;color:#3578e5;cursor:pointer;">忘记密码 / 找回</button></div>
+      <div class="auth-note" id="authNote">账号不绑定电脑，可在其他电脑登录。报价数据保存在本机，如需迁移请使用“导出数据 / 导入数据”。</div>
+    </div>
+  </div>
+</div>
+<div id="erpSaveStatus" style="position:fixed;right:18px;bottom:14px;z-index:99999;background:#fff;border:1px solid #e3e8ef;border-radius:8px;padding:6px 10px;font-size:12px;color:#7b8797;box-shadow:0 3px 12px rgba(0,0,0,.08);">本地数据</div>
+    <aside class="sidebar">
+        <div class="sidebar-brand"><span>️</span><span class="brand-text">中禾报价 <small>ERP</small></span></div>
+        <nav class="sidebar-nav">
+            <div class="nav-item" data-page="dashboard"><span class="icon"></span><span class="label">仪表板</span></div>
+            <div class="nav-item active" data-page="quote-new"><span class="icon"></span><span class="label">新建报价</span></div>
+            <div class="nav-item" data-page="customers"><span class="icon"></span><span class="label">报价客户管理</span></div>
+            <div class="nav-item" data-page="quotes"><span class="icon"></span><span class="label">报价历史查询</span></div>
+            <div class="nav-item" data-page="deals"><span class="icon">✅</span><span class="label">已成交的报价单</span></div>
+        </nav>
+        <div id="authUserBadge"><span id="authUserName">管理员</span><div style="display:flex;gap:6px;"><button id="authAccount" type="button" onclick="openAccountModal()" style="border:0;background:#49627f;color:#fff;cursor:pointer;font-size:12px;padding:5px 9px;border-radius:6px;white-space:nowrap;">账号设置</button><button id="authLogout">退出登录</button></div></div><div class="sidebar-footer">v7.1 · 单机版</div>
+    </aside>
+    <main class="main" id="mainContent">
+
+        <section id="page-dashboard" class="page">
+            <div class="page-header"><h2> 仪表板 <small style="font-weight:400;font-size:14px;color:#6a7b94;">近30天数据</small></h2><div class="actions"><button class="btn btn-outline btn-sm" onclick="exportAllData()"> 导出数据</button><button class="btn btn-outline btn-sm" onclick="document.getElementById('importFileInput').click()"> 导入数据</button><input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importAllData(event)"></div></div>
+            <div class="stats-grid"><div class="stat-card"><div class="icon-bg"></div><div class="number" id="statDeals30">0</div><div class="label">已成交订单数</div></div><div class="stat-card"><div class="icon-bg"></div><div class="number" id="statCustomers30">0</div><div class="label">报价客户数</div></div><div class="stat-card"><div class="icon-bg"></div><div class="number" id="statQuotes30">0</div><div class="label">报价单数</div></div></div>
+            <div class="card"><div class="card-title"> 快速入口</div><div style="display:flex; gap:12px; flex-wrap:wrap;"><button class="btn btn-primary" onclick="navigateTo('quote-new')"> 新建报价</button><button class="btn btn-success" onclick="navigateTo('customers')"> 管理客户</button><button class="btn btn-outline" onclick="navigateTo('quotes')"> 报价查询</button><button class="btn btn-outline" onclick="navigateTo('deals')">✅ 成交数据</button></div></div>
+            <div class="card"><div class="card-title"> 近30天各类别询价次数</div><div class="table-wrap"><table><thead><tr><th>产品类别</th><th>询价次数</th></tr></thead><tbody id="categoryStatsBody"><tr><td colspan="2" class="text-center text-muted">暂无数据</td></tr></tbody></table></div></div>
+            <div class="card"><div class="card-title"> 最近报价</div><div class="table-wrap"><table><thead><tr><th>报价单号</th><th>客户</th><th>产品预览</th><th>日期</th><th>有效期</th><th>合计</th><th>状态</th></tr></thead><tbody id="recentQuotesBody"><tr><td colspan="6" class="text-center text-muted">暂无报价</td></tr></tbody></table></div></div>
+            <!-- 新增：已过期报价提醒 -->
+            <div class="card" id="expiredQuotesCard" style="display:none;"><div class="card-title" style="color:#c0392b;">️ 已过期报价提醒</div><div class="table-wrap"><table><thead><tr><th>报价单号</th><th>客户</th><th>过期日期</th><th>合计</th><th>状态</th></tr></thead><tbody id="expiredQuotesBody"><tr><td colspan="5" class="text-center text-muted">暂无过期报价</td></tr></tbody></table></div></div>
+            <!-- 新增：跟进提醒 -->
+            <div class="card" id="followupCard" style="display:none;"><div class="card-title" style="color:#b87a0e;"> 待跟进提醒</div><div class="table-wrap"><table><thead><tr><th>报价单号</th><th>客户</th><th>跟进日期</th><th>合计</th><th>状态</th></tr></thead><tbody id="followupQuotesBody"><tr><td colspan="5" class="text-center text-muted">暂无待跟进</td></tr></tbody></table></div></div>
+        </section>
+
+        <section id="page-quote-new" class="page hidden">
+            <div class="page-header"><h2> 新建报价</h2><div class="actions"><button class="btn btn-outline btn-sm" onclick="resetQuoteForm()"> 重置</button></div></div>
+            <div class="card"><div class="card-title"> 客户信息</div><div class="form-grid"><div class="form-group"><label>客户类型</label><select id="quoteCustomerType"><option value="">-- 请选择 --</option><option value="个人">个人</option><option value="企业">企业</option><option value="礼品公司">礼品公司</option><option value="学校">学校</option><option value="外贸公司">外贸公司</option><option value="国外客户">国外客户</option></select></div><div class="form-group"><label>报价日期</label><input type="date" id="quoteDate"></div><div class="form-group"><label>有效期</label><select id="quoteValidity"><option value="0">仅当天</option><option value="30" selected>30天</option><option value="60">60天</option><option value="90">90天</option></select></div><div class="form-group"><label>跟进日期</label><input type="date" id="quoteFollowUp"></div><div class="form-group"><label>客户ID类型</label><select id="quoteIdType"><option value="">-- 请选择 --</option><option value="旺旺">旺旺</option><option value="微信">微信</option><option value="QQ">QQ</option></select></div><div class="form-group"><label>客户ID号码</label><input type="text" id="quoteIdNumber" placeholder="请输入对应号码"></div><div class="form-group" style="grid-column:1/-1;"><label>报价单备注</label><input type="text" id="quoteRemark" placeholder="可选备注"></div><div class="form-group" style="grid-column:1/-1;"><label>报价总额显示</label><select id="quoteShowTotal"><option value="show" selected>显示报价总额</option><option value="hide">隐藏报价总额</option></select><div style="font-size:12px;color:#8a9bb5;margin-top:3px;">多数量/多方案报价时，建议隐藏总额，避免客户误解。</div></div></div></div>
+            <div class="card"><div class="card-title"><span> 添加产品</span><div class="actions" style="gap:6px;"><select id="quoteProductCategory" style="min-width:160px;"><option value="">-- 选择类别 --</option><option value="徽章/胸牌">徽章/胸牌</option><option value="纪念币">纪念币</option><option value="奖牌/奖章">奖牌/奖章</option><option value="钥匙扣/挂件">钥匙扣/挂件</option><option value="冰箱贴">冰箱贴</option><option value="开瓶器">开瓶器</option><option value="书签">书签</option><option value="奖杯">奖杯</option><option value="代币/游戏币">代币/游戏币</option><option value="领带夹/文具夹">领带夹/文具夹</option><option value="袖扣">袖扣</option><option value="金属标牌">金属标牌</option><option value="金属摆件">金属摆件</option><option value="其他金属制品">其他金属制品</option></select><button class="btn btn-primary btn-sm" onclick="addQuoteItem()"> 添加行</button></div></div><div class="table-wrap"><table><thead><tr><th style="width:40px;">序号</th><th style="min-width:100px;">品名</th><th style="min-width:140px;">设计图</th><th style="min-width:80px;">材质</th><th style="min-width:120px;">规格</th><th style="min-width:140px;">工艺要求</th><th style="width:70px;">数量<br><span style="font-weight:400;font-size:11px;">(PCS)</span></th><th style="width:90px;">单价<br><span style="font-weight:400;font-size:11px;">(元/PCS)</span></th><th style="width:120px;">模具费<br><span style="font-weight:400;font-size:11px;">(元)</span></th><th style="width:90px;">合计<br><span style="font-weight:400;font-size:11px;">(元)</span></th><th style="min-width:80px;">工期</th><th style="min-width:120px;">包装数据</th><th style="min-width:120px;">备注</th></tr></thead><tbody id="quoteItemsBody"></tbody><tfoot><tr><td colspan="9" class="text-right" style="font-weight:700;">合计：</td><td colspan="4" style="font-weight:700;font-size:16px;" id="quoteTotalDisplay">¥0.00</td></tr></tfoot></table></div><div id="sampleInfoContainer" style="margin-top:16px;"></div><div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;"><button class="btn btn-success" onclick="saveQuote()"> 保存报价单</button><button class="btn btn-outline" onclick="previewQuote()"> 预览报价单</button></div><input type="hidden" id="editQuoteId" value=""></div>
+        </section>
+
+        <section id="page-customers" class="page hidden"><div class="page-header"><h2> 报价客户管理</h2><div class="actions"><button class="btn btn-outline btn-sm" onclick="syncCustomersFromQuotes()"> 同步客户</button></div></div><div class="card"><div class="table-wrap"><table><thead><tr><th>ID类型</th><th>ID号码</th><th>客户类型</th><th>客户名称</th><th>联系电话</th><th>微信</th><th>地址</th><th>邮箱</th><th>最后报价</th><th>操作</th></tr></thead><tbody id="customersBody"></tbody></table></div></div></section>
+        <section id="page-quotes" class="page hidden">
+            <div class="page-header"><h2> 报价历史查询</h2><div class="actions"><button class="btn btn-outline btn-sm" onclick="renderQuotes()"> 刷新</button></div></div>
+            <div class="card">
+                <div class="card-title"> 筛选报价单</div>
+                <div class="filter-box">
+                    <div class="filter-item"><label>客户名称 / ID</label><input type="text" id="filterCustId" placeholder="输入客户名称或ID"></div>
+                    <div class="filter-item"><label>产品名称</label><input type="text" id="filterProductName" placeholder="输入品名或产品类别"></div>
+                    <div class="filter-item"><label>开始日期</label><input type="date" id="filterDateStart"></div>
+                    <div class="filter-item"><label>结束日期</label><input type="date" id="filterDateEnd"></div>
+                    <div class="filter-actions"><button class="btn btn-primary btn-sm" onclick="applyQuoteFilters()"> 查询</button><button class="btn btn-outline btn-sm" onclick="resetQuoteFilters()"> 重置</button></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 10px;"><div id="quotesCount" style="font-size:13px;color:#6d7785;"></div></div><div class="table-wrap"><table><thead><tr><th>报价单号</th><th>客户</th><th>产品预览</th><th>日期</th><th>有效期</th><th>合计</th><th>状态</th><th>跟进</th><th>操作</th></tr></thead><tbody id="quotesBody"></tbody></table></div><div id="quotesPagination" style="display:flex;justify-content:center;align-items:center;gap:6px;margin-top:16px;flex-wrap:wrap;"></div>
+            </div>
+        </section>
+        <section id="page-deals" class="page hidden"><div class="page-header"><h2>✅ 已成交的报价单</h2><div class="actions"><button class="btn btn-outline btn-sm" onclick="renderDeals()"> 刷新</button></div></div><div class="card"><div class="table-wrap"><table><thead><tr><th>报价单号</th><th>客户</th><th>日期</th><th>有效期</th><th>合计</th><th>状态</th><th>跟进</th></tr></thead><tbody id="dealsBody"></tbody></table></div></div></section>
+
+    <div class="modal-overlay" id="customerEditModal"><div class="modal"><div class="modal-header"><h3>编辑客户信息</h3><button class="modal-close" onclick="closeModal('customerEditModal')"></button></div><div class="form-grid"><div class="form-group"><label>客户名称</label><input id="ce_name" placeholder="可自定义名称"></div><div class="form-group"><label>联系电话</label><input id="ce_phone" placeholder="手机号"></div><div class="form-group"><label>微信</label><input id="ce_wechat" placeholder="微信号"></div><div class="form-group" style="grid-column:1/-1;"><label>地址</label><input id="ce_address" placeholder="详细地址"></div><div class="form-group" style="grid-column:1/-1;"><label>邮箱</label><input id="ce_email" placeholder="邮箱地址"></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('customerEditModal')">取消</button><button class="btn btn-primary" onclick="saveCustomerEdit()">保存</button></div><input type="hidden" id="ce_editId" value=""></div></div>
+    <div class="modal-overlay" id="accountModal"><div class="modal" style="max-width:560px;"><div class="modal-header"><h3>账号与安全</h3><button class="modal-close" onclick="closeModal('accountModal')"></button></div><div style="padding:20px 22px;"><div style="font-size:13px;color:#687991;margin-bottom:16px;">当前账号：<strong id="accountCurrentUsername">管理员</strong></div><div class="card" style="padding:16px;margin-bottom:14px;"><div style="font-weight:600;margin-bottom:12px;">报价单公司信息</div><div class="form-grid"><div class="form-group" style="grid-column:1/-1;"><label>公司名称</label><input id="companySettingName" placeholder="报价单显示的公司名称"></div><div class="form-group" style="grid-column:1/-1;"><label>联系人</label><input id="companySettingContact" placeholder="例如：周先生 18968858818"></div><div class="form-group" style="grid-column:1/-1;"><label>E-Mail</label><input id="companySettingEmail" placeholder="公司邮箱"></div><div class="form-group" style="grid-column:1/-1;"><label>工厂地址</label><input id="companySettingAddress" placeholder="报价单显示的工厂地址"></div><div class="form-group"><label>邮编</label><input id="companySettingPostalCode" placeholder="邮政编码"></div></div><button class="btn btn-primary btn-sm" onclick="saveCompanySettings()">保存公司信息</button></div><div class="card" style="padding:16px;margin-bottom:14px;"><div style="font-weight:600;margin-bottom:12px;">修改密码</div><div class="form-grid"><div class="form-group" style="grid-column:1/-1;"><label>原密码</label><input id="changeOldPassword" type="password" autocomplete="current-password"></div><div class="form-group"><label>新密码</label><input id="changeNewPassword" type="password" autocomplete="new-password"></div><div class="form-group"><label>确认新密码</label><input id="changeNewPassword2" type="password" autocomplete="new-password"></div></div><button class="btn btn-primary btn-sm" onclick="changePasswordFromUI()">保存新密码</button></div><div class="card" style="padding:16px;"><div style="font-weight:600;margin-bottom:8px;">密码找回码</div><div style="font-size:12px;color:#74839a;line-height:1.6;">忘记密码时，可在登录页使用找回码重置密码。找回码只在本机保存，请务必抄下来妥善保管。</div><div id="recoveryCodeDisplay" class="recovery-code-box">点击生成</div><div style="display:flex;gap:8px;"><button class="btn btn-outline btn-sm" onclick="generateRecoveryCodeFromUI()">生成 / 查看找回码</button><button class="btn btn-outline btn-sm" onclick="copyRecoveryCode()">复制</button></div></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('accountModal')">关闭</button></div></div></div>
+    <div class="modal-overlay" id="quoteModal"><div class="modal" style="max-width:1000px;"><div class="modal-header"><h3> 报价单</h3><button class="modal-close" onclick="closeModal('quoteModal')"></button></div><div id="quoteDetailContent" class="quote-preview-container"></div><div class="modal-footer" style="flex-wrap:wrap;"><div style="display:flex;align-items:center;gap:12px;flex:1;flex-wrap:wrap;"><label style="font-weight:500;">状态：</label><select id="detailStatusSelect" style="padding:4px 10px;"><option value="待确认">待确认</option><option value="成交下单">成交下单</option><option value="无效报价">无效报价</option></select><button class="btn btn-sm btn-primary" onclick="updateQuoteStatusFromDetail()">更新状态</button><button class="btn btn-sm btn-warning" onclick="editQuoteFromDetail()">️ 编辑</button><button class="btn btn-sm btn-outline" onclick="copyQuoteFromDetail()"> 复制</button><button class="btn btn-sm btn-outline" onclick="showRevisionHistory()"> 修订记录</button></div><div style="display:flex;gap:8px;"><button class="btn btn-outline" onclick="closeModal('quoteModal')">关闭</button><button class="btn btn-primary" onclick="window.print()">️ 打印</button><button class="btn btn-success" onclick="exportQuoteToPDF()"> 导出 PDF</button><button id="btnExportQuoteExcel" class="btn btn-outline" onclick="exportQuoteToExcel()"> 导出 Excel</button><button class="btn btn-danger" onclick="deleteQuoteFromDetail()">️ 删除</button></div></div></div></div>
+    <!-- 新增：修订记录弹窗 -->
+    <div class="modal-overlay" id="revisionModal"><div class="modal" style="max-width:700px;"><div class="modal-header"><h3> 报价修订记录</h3><button class="modal-close" onclick="closeModal('revisionModal')"></button></div><div id="revisionContent" style="max-height:70vh;overflow-y:auto;"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('revisionModal')">关闭</button></div></div></div>
+    <!-- 新增：图片查看器弹窗 -->
+    <div class="modal-overlay" id="imageViewerModal" onclick="closeModal('imageViewerModal')"><div style="position:relative;display:inline-block;max-width:90vw;max-height:90vh;"><img id="imageViewerImg" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="产品图片预览" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.3);"><div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);color:#fff;padding:4px 12px;border-radius:12px;font-size:12px;" id="imageViewerInfo"></div></div></div>
+
+    <script>
+        let DB = { customers: [], quotes: [], nextCustomerId: 1, nextQuoteId: 1, settings: { companyName: '温州市中禾工艺品有限公司', contact: '周先生 18968858818（微信同号）', email: '2958282626@qq.com', address: '浙江省·温州市·平阳县滨海新区海华路136号', postalCode: '325400' } };
+        let authMode = 'login';
+        let currentViewingQuoteId = null;
+        let editingQuoteSnapshot = null;
+        let DBRevision = '';
+        function normalizeDB(data) {
+            data = data || {};
+            data.customers = Array.isArray(data.customers) ? data.customers : [];
+            data.quotes = Array.isArray(data.quotes) ? data.quotes : [];
+            data.nextCustomerId = Number(data.nextCustomerId) || 1;
+            data.nextQuoteId = Number(data.nextQuoteId) || 1;
+            data.settings = Object.assign({
+                companyName: '温州市中禾工艺品有限公司',
+                contact: '周先生 18968858818（微信同号）',
+                email: '2958282626@qq.com',
+                address: '浙江省·温州市·平阳县滨海新区海华路136号',
+                postalCode: '325400'
+            }, data.settings || {});
+            data.quotes.forEach(q => {
+                q.items = Array.isArray(q.items) ? q.items : [];
+                q.history = Array.isArray(q.history) ? q.history : [];
+                q.followUpDate = q.followUpDate || '';
+                if (q.showTotal === undefined) q.showTotal = true;
+                q.items.forEach(item => {
+                    if (!Array.isArray(item.images)) item.images = [];
+                    if (item.imageUrl && !item.images.length) {
+                        item.images = [{filename:item.imageUrl, version:1, timestamp:Date.now(), note:''}];
+                    }
+                    item.images = item.images.filter(Boolean).map((img,i) => {
+                        if (typeof img === 'string') img = {filename:img};
+                        return Object.assign({filename:'', version:i+1, timestamp:Date.now(), note:''}, img, {version:i+1});
+                    });
+                });
+            });
+            return data;
+        }
+        function sameJSON(a,b){ return JSON.stringify(a||{}) === JSON.stringify(b||{}); }
+        function nextFreeId(prefix, used, start){
+            let n = Math.max(1, Number(start)||1);
+            while(used.has(prefix+n)) n++;
+            const id = prefix+n; used.add(id); return {id, next:n+1};
+        }
+        function maxNextId(list,prefix,current){
+            let n = Math.max(1, Number(current)||1);
+            (list||[]).forEach(x => {
+                const id = String((x&&x.id)||'');
+                if(id.startsWith(prefix) && /^\d+$/.test(id.slice(prefix.length))) n = Math.max(n, Number(id.slice(prefix.length))+1);
+            });
+            return n;
+        }
+        function mergeImportedData(currentData, importedData){
+            const current = normalizeDB(JSON.parse(JSON.stringify(currentData||{})));
+            const incoming = normalizeDB(JSON.parse(JSON.stringify(importedData||{})));
+            const merged = normalizeDB(JSON.parse(JSON.stringify(current)));
+
+            const usedCustomerIds = new Set(merged.customers.map(c => String(c.id||'')).filter(Boolean));
+            const customerByKey = new Map(merged.customers.filter(c=>c.key).map(c => [String(c.key), c]));
+            let nextCustomerId = maxNextId(merged.customers.concat(incoming.customers), 'c', Math.max(merged.nextCustomerId, incoming.nextCustomerId));
+            incoming.customers.forEach(c => {
+                if(!c || typeof c !== 'object') return;
+                const rec = Object.assign({}, c);
+                const existing = rec.key ? customerByKey.get(String(rec.key)) : null;
+                if(existing){
+                    Object.keys(rec).forEach(k => {
+                        if(k === 'id') return;
+                        if(k === 'lastQuoteDate'){
+                            if(String(rec[k]||'') > String(existing[k]||'')) existing[k] = rec[k];
+                        } else if((existing[k] === undefined || existing[k] === '') && rec[k] !== undefined && rec[k] !== ''){
+                            existing[k] = rec[k];
+                        }
+                    });
+                    return;
+                }
+                if(!rec.id || usedCustomerIds.has(String(rec.id))){
+                    const fresh = nextFreeId('c', usedCustomerIds, nextCustomerId);
+                    rec.id = fresh.id; nextCustomerId = fresh.next;
+                } else {
+                    usedCustomerIds.add(String(rec.id));
+                }
+                merged.customers.push(rec);
+                if(rec.key) customerByKey.set(String(rec.key), rec);
+            });
+
+            const usedQuoteIds = new Set(merged.quotes.map(q => String(q.id||'')).filter(Boolean));
+            const quoteById = new Map(merged.quotes.filter(q=>q.id).map(q => [String(q.id), q]));
+            let nextQuoteId = maxNextId(merged.quotes.concat(incoming.quotes), 'q', Math.max(merged.nextQuoteId, incoming.nextQuoteId));
+            incoming.quotes.forEach(q => {
+                if(!q || typeof q !== 'object') return;
+                const rec = JSON.parse(JSON.stringify(q));
+                const existing = rec.id ? quoteById.get(String(rec.id)) : null;
+                if(existing && sameJSON(existing, rec)) return;
+                if(!rec.id || usedQuoteIds.has(String(rec.id))){
+                    const fresh = nextFreeId('q', usedQuoteIds, nextQuoteId);
+                    rec.id = fresh.id; nextQuoteId = fresh.next;
+                } else {
+                    usedQuoteIds.add(String(rec.id));
+                }
+                merged.quotes.push(rec);
+                quoteById.set(String(rec.id), rec);
+            });
+
+            merged.nextCustomerId = maxNextId(merged.customers, 'c', nextCustomerId);
+            merged.nextQuoteId = maxNextId(merged.quotes, 'q', nextQuoteId);
+            merged.settings = Object.assign({}, merged.settings||{}, incoming.settings||{});
+            return normalizeDB(merged);
+        }
+
+        function renderPreviewContent(html) {
+            const host = document.getElementById('quoteDetailContent');
+            if (!host) return;
+            if (host._previewResizeObserver) { try { host._previewResizeObserver.disconnect(); } catch(e){} }
+            host.innerHTML = '<div class="quote-preview-wrap"><div class="quote-preview-fit">' + html + '</div></div>';
+            const fit = host.querySelector('.quote-preview-fit');
+            const wrap = host.querySelector('.quote-preview-wrap');
+            const apply = () => {
+                if (!fit || !wrap) return;
+                const baseWidth = 1500;
+                const available = Math.max(320, wrap.clientWidth - 4);
+                const scale = Math.min(1.12, available / baseWidth);
+                fit.style.transform = 'scale(' + scale + ')';
+                fit.style.marginLeft = Math.max(0, (available - baseWidth * scale) / 2) + 'px';
+                wrap.style.height = Math.ceil(fit.scrollHeight * scale + 8) + 'px';
+            };
+            requestAnimationFrame(apply);
+            setTimeout(apply, 80);
+            if (window.ResizeObserver) {
+                const ro = new ResizeObserver(apply);
+                ro.observe(wrap);
+                host._previewResizeObserver = ro;
+            }
+        }
+
+        async function checkAuthStatus() {
+            try {
+                const res=await fetch('/api/auth/status',{cache:'no-store'}); const info=await res.json().catch(()=>({}));
+                if(info.setupRequired){ showAuth('setup'); return false; }
+                if(info.loggedIn){ hideAuth(info.username); return true; }
+                showAuth('login'); return false;
+            }catch(e){ showAuthError('无法连接本地服务，请确认 server.py 正在运行。'); return false; }
+        }
+        function showAuth(mode){
+            authMode=mode; const overlay=document.getElementById('authOverlay'), title=document.getElementById('authTitle'), sub=document.getElementById('authSubtitle'), submit=document.getElementById('authSubmit'), p2=document.getElementById('authPassword2Group'), note=document.getElementById('authNote');
+            overlay.style.display='flex'; document.getElementById('authUserBadge').style.display='none'; document.getElementById('authUsername').disabled=false; document.getElementById('authPassword').disabled=false; submit.disabled=false; submit.style.display='block'; submit.onclick=performAuth;
+            p2.style.display=mode==='setup'?'block':'none'; document.getElementById('authRecoveryCodeGroup').style.display='none'; document.getElementById('authUsername').value=''; document.getElementById('authPassword').value=''; document.getElementById('authPassword2').value=''; document.getElementById('authError').textContent='';
+            if(mode==='setup'){title.textContent='初始化中禾报价 ERP';sub.textContent='第一次使用，请创建您的管理员账号';submit.textContent='创建账号并进入';note.textContent='账号不绑定电脑，可在其他电脑登录。报价数据保存在本机，如需迁移请使用“导出数据 / 导入数据”。';}
+            else{title.textContent='中禾报价 ERP';sub.textContent='本地版 · 数据保存在您的电脑';submit.textContent='登 录';note.textContent='账号不绑定电脑，可在其他电脑登录。报价数据保存在本机。';}
+            setTimeout(()=>document.getElementById('authUsername').focus(),50);
+        }
+        function hideAuth(username){document.getElementById('authOverlay').style.display='none';document.getElementById('authUserBadge').style.display='flex';document.getElementById('authUserName').textContent=' '+(username||'管理员');}
+        function showAuthError(msg){document.getElementById('authError').textContent=msg||'';}
+        function showForgotPassword(){
+            if(authMode==='setup'){showAuthError('当前状态不能使用密码找回。');return;}
+            document.getElementById('authTitle').textContent='找回密码';document.getElementById('authSubtitle').textContent='使用本机密码找回码重置密码';
+            document.getElementById('authSubmit').textContent='重置密码';document.getElementById('authSubmit').onclick=performPasswordRecovery;
+            document.getElementById('authPassword2Group').style.display='block';document.getElementById('authRecoveryCodeGroup').style.display='block';
+            document.getElementById('authPassword').placeholder='请输入新密码';document.getElementById('authPassword2').placeholder='再次输入新密码';document.getElementById('authNote').textContent='如果没有找回码，请登录后在“账号设置”中生成。';document.getElementById('authError').textContent='';
+        }
+        async function performPasswordRecovery(){
+            const username=document.getElementById('authUsername').value.trim(),code=document.getElementById('authRecoveryCode').value.trim(),password=document.getElementById('authPassword').value,password2=document.getElementById('authPassword2').value;
+            if(username.length<3)return showAuthError('用户名至少需要3位。');if(!code)return showAuthError('请输入密码找回码。');if(password.length<8)return showAuthError('密码至少需要8位。');if(password!==password2)return showAuthError('两次输入的新密码不一致。');
+            try{const res=await fetch('/api/auth/recover-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,recoveryCode:code,newPassword:password})});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||'密码找回失败');alert('密码已重置，请使用新密码登录。');location.reload();}catch(e){showAuthError(e.message);}
+        }
+        function openAccountModal(){const name=document.getElementById('authUserName').textContent.trim()||'管理员';document.getElementById('accountCurrentUsername').textContent=name;const st=DB.settings||{};document.getElementById('companySettingName').value=st.companyName||'';document.getElementById('companySettingContact').value=st.contact||'';document.getElementById('companySettingEmail').value=st.email||'';document.getElementById('companySettingAddress').value=st.address||'';document.getElementById('companySettingPostalCode').value=st.postalCode||'';document.getElementById('accountModal').classList.add('show');loadRecoveryCode();}
+        async function saveCompanySettings(){DB.settings={companyName:document.getElementById('companySettingName').value.trim()||'温州市中禾工艺品有限公司',contact:document.getElementById('companySettingContact').value.trim()||'周先生 18968858818（微信同号）',email:document.getElementById('companySettingEmail').value.trim()||'2958282626@qq.com',address:document.getElementById('companySettingAddress').value.trim()||'浙江省·温州市·平阳县滨海新区海华路136号',postalCode:document.getElementById('companySettingPostalCode').value.trim()||'325400'};if(await saveData(DB)){if(currentViewingQuoteId){const q=DB.quotes.find(x=>x.id===currentViewingQuoteId);if(q)renderPreviewContent(buildQuoteHTML(q));}alert('公司信息已保存。以后预览、PDF、Excel都会使用新的公司信息。');}}
+        async function loadRecoveryCode(){try{const res=await fetch('/api/auth/recovery-code',{cache:'no-store'});const data=await res.json().catch(()=>({}));document.getElementById('recoveryCodeDisplay').textContent=res.ok?(data.recoveryCode||'已生成'):'未生成';}catch(e){document.getElementById('recoveryCodeDisplay').textContent='读取失败';}}
+        async function generateRecoveryCodeFromUI(){try{const res=await fetch('/api/auth/recovery-code',{method:'POST'});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||'生成失败');document.getElementById('recoveryCodeDisplay').textContent=data.recoveryCode;alert('找回码已生成，请务必抄下保存。');}catch(e){alert(e.message);}}
+        function copyRecoveryCode(){const code=document.getElementById('recoveryCodeDisplay').textContent.trim();if(!code||code==='点击生成'||code==='未生成')return alert('请先生成找回码。');navigator.clipboard?.writeText(code).then(()=>alert('找回码已复制。')).catch(()=>alert('复制失败，请手动抄下找回码。'));}
+        async function changePasswordFromUI(){const oldPassword=document.getElementById('changeOldPassword').value,newPassword=document.getElementById('changeNewPassword').value,newPassword2=document.getElementById('changeNewPassword2').value;if(!oldPassword||!newPassword)return alert('请完整填写密码。');if(newPassword!==newPassword2)return alert('两次新密码不一致。');try{const res=await fetch('/api/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({oldPassword,newPassword})});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||'修改失败');alert('密码修改成功，请重新登录。');location.reload();}catch(e){alert(e.message);}}
+        async function performAuth(){
+            const username=document.getElementById('authUsername').value.trim(), password=document.getElementById('authPassword').value, password2=document.getElementById('authPassword2').value;
+            if(username.length<3)return showAuthError('用户名至少需要3位。'); if(password.length<8)return showAuthError('密码至少需要8位。'); if(authMode==='setup'&&password!==password2)return showAuthError('两次输入的密码不一致。');
+            const btn=document.getElementById('authSubmit'); btn.disabled=true; btn.textContent='验证中…';
+            try{const endpoint=authMode==='setup'?'/api/auth/setup':'/api/auth/login'; const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})}); const data=await res.json().catch(()=>({}));
+                if(!res.ok){const m={invalid_credentials:'用户名或密码错误。',authorization_missing_for_existing_data:'已有业务数据但授权文件缺失，不能重新初始化。',already_setup:'授权已经初始化，请直接登录。'}; throw new Error(m[data.error]||data.error||'操作失败');}
+                hideAuth(data.username||username); if(authMode==='setup' && data.recoveryCode){ alert('账号创建成功！\n\n密码找回码：'+data.recoveryCode+'\n\n请务必抄下保存，忘记密码时需要它。'); } await startERPAfterLogin();
+            }catch(e){showAuthError(e.message);}finally{btn.disabled=false;btn.textContent=authMode==='setup'?'创建账号并进入':'登 录';}
+        }
+        async function logoutERP(){try{await fetch('/api/auth/logout',{method:'POST'});}catch(e){} location.reload();}
+        async function loadData(){
+            try{
+                const res=await fetch('/api/data',{cache:'no-store'}); if(res.status===401){showAuth('login');return false;} if(!res.ok)throw new Error();
+                DB=await res.json();
+                DBRevision=res.headers.get('X-Data-Revision')||'';
+                DB.customers=DB.customers||[]; DB.quotes=DB.quotes||[];
+                DB.nextCustomerId=DB.nextCustomerId||1; DB.nextQuoteId=DB.nextQuoteId||1;
+                // 数据迁移：旧格式 imageUrl -> 新格式 images 数组
+                DB.quotes.forEach(q => {
+                    if(q.status==='已确认')q.status='成交下单';
+                    else if(q.status==='已报价')q.status='待确认';
+                    else if(q.status==='已取消')q.status='无效报价';
+                    else if(!q.status)q.status='待确认';
+                    if(!q.customerName)q.customerName='';
+                    // 迁移旧 imageUrl 到 images 数组
+                    if(!q.items) q.items = [];
+                    q.items.forEach(item => {
+                        if(item.imageUrl && !item.images) {
+                            item.images = [{filename: item.imageUrl, version: 1, timestamp: Date.now(), note: ''}];
+                            delete item.imageUrl;
+                        }
+                        if(!item.images) item.images = [];
+                    });
+                    // 添加修订历史字段（如果不存在）
+                    if(!q.history) q.history = [];
+                    // 添加跟进日期字段（如果不存在）
+                    if(!q.followUpDate) q.followUpDate = '';
+                });
+                return true;
+            }catch(e){alert('无法连接服务器，请确保服务已启动');return false;}
+        }
+        async function saveData(data) {
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (DBRevision) headers['X-Data-Revision'] = DBRevision;
+                const res = await fetch('/api/data', { method: 'POST', headers, body: JSON.stringify(data) });
+                const payload = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    if (res.status === 401) { showAuth('login'); throw new Error('登录已失效，请重新登录后再保存。'); }
+                    if (res.status === 409 && payload.error === 'data_conflict') {
+                        alert('⚠️ 检测到百度网盘同步冲突。\n\n另一台电脑可能已经修改了报价数据。\n系统会尽量自动合并两边数据；请等待百度网盘同步完成后刷新检查。');
+                        await loadData();
+                        return false;
+                    }
+                    throw new Error(payload.error || ('保存失败（HTTP ' + res.status + '）'));
+                }
+                if (payload.data) {
+                    DB = payload.data;
+                    DB.customers=DB.customers||[]; DB.quotes=DB.quotes||[];
+                }
+                DBRevision = payload.revision || res.headers.get('X-Data-Revision') || '';
+                const status = document.getElementById('erpSaveStatus');
+                if (status) status.textContent = (payload.merged ? '✓ 已合并保存 ' : '✓ 已保存 ') + new Date().toLocaleTimeString();
+                if (payload.merged) alert('检测到百度网盘数据已变化，系统已自动合并两边数据并保存。');
+                return true;
+            } catch (e) {
+                alert('保存数据失败: ' + e.message);
+                return false;
+            }
+        }
+        function genQuoteId() { return 'q' + (DB.nextQuoteId++); }
+        function genQuoteNumber() {
+            const d = new Date();
+            const y = d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+            const prefix = 'Q' + y + m + day;
+            const count = DB.quotes.filter(q => q.number && q.number.startsWith(prefix)).length;
+            return prefix + String(count + 1).padStart(3,'0');
+        }
+        function isWithin30Days(dateStr) {
+            if (!dateStr) return false;
+            const d = new Date(dateStr), now = new Date();
+            return (now - d) / (1000*60*60*24) <= 30 && (now - d) / (1000*60*60*24) >= 0;
+        }
+        function getCustomerKey(customerType, idType, idNumber) { return (customerType || '') + '|' + (idType || '') + '|' + (idNumber || ''); }
+        function findOrCreateCustomer(customerType, idType, idNumber, quoteDate) {
+            const key = getCustomerKey(customerType, idType, idNumber);
+            let customer = DB.customers.find(c => c.key === key);
+            if (!customer) {
+                const name = (customerType || '') + (idNumber ? '-' + idNumber : '');
+                customer = { id: 'c' + (DB.nextCustomerId++), key: key, customerType: customerType || '', idType: idType || '', idNumber: idNumber || '', name: name, phone: '', wechat: '', address: '', email: '', lastQuoteDate: quoteDate };
+                DB.customers.push(customer);
+            } else { if (quoteDate && quoteDate > customer.lastQuoteDate) customer.lastQuoteDate = quoteDate; }
+            return customer;
+        }
+        function navigateTo(page) {
+            document.querySelectorAll('.page').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('page-' + page);
+            if (target) target.classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const navItem = document.querySelector('.nav-item[data-page="' + page + '"]');
+            if (navItem) navItem.classList.add('active');
+            if (page === 'dashboard') renderDashboard();
+            if (page === 'customers') renderCustomers();
+            if (page === 'quote-new') renderQuoteForm();
+            if (page === 'quotes') renderQuotes();
+            if (page === 'deals') renderDeals();
+        }
+        document.querySelectorAll('.nav-item').forEach(el => { el.addEventListener('click', function() { navigateTo(this.dataset.page); }); });
+
+        function renderDashboard() {
+            const today = new Date(), todayStr = today.toISOString().slice(0,10);
+            const quotes = Array.isArray(DB.quotes) ? DB.quotes : [], customers = Array.isArray(DB.customers) ? DB.customers : [];
+            const parseDate = v => { const d=new Date(v); return isNaN(d.getTime())?null:d; };
+            const recent = quotes.filter(q=>{const d=parseDate(q.date); if(!d)return false; const diff=(today-d)/86400000; return diff>=0&&diff<=30;});
+            const statsQuotes = recent.length ? recent : quotes;
+            const keys = new Set(statsQuotes.map(q=>getCustomerKey(q.customerType,q.customerIdType,q.customerIdNumber)).filter(Boolean));
+            const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v);};
+            set('statDeals30',statsQuotes.filter(q=>q.status==='成交下单').length);
+            set('statCustomers30',keys.size||customers.length);
+            set('statQuotes30',statsQuotes.length);
+            const cats={}; statsQuotes.forEach(q=>(Array.isArray(q.items)?q.items:[]).forEach(i=>{if(i&&i.category)cats[i.category]=(cats[i.category]||0)+1;}));
+            const cb=document.getElementById('categoryStatsBody'); if(cb){const es=Object.entries(cats).sort((a,b)=>b[1]-a[1]);cb.innerHTML=es.length?es.map(([k,v])=>'<tr><td>'+k+'</td><td>'+v+'</td></tr>').join(''):'<tr><td colspan="2" class="text-center text-muted">暂无询价数据</td></tr>';}
+            const recent5=[...quotes].sort((a,b)=>(parseDate(b.date)?.getTime()||b.createdAt||0)-(parseDate(a.date)?.getTime()||a.createdAt||0)).slice(0,5), rb=document.getElementById('recentQuotesBody');
+            if(rb){rb.innerHTML=recent5.length?recent5.map(q=>{const cls=({'待确认':'tag-warning','成交下单':'tag-success','无效报价':'tag-danger'})[q.status]||'tag-warning';return '<tr><td><a href="javascript:void(0)" onclick="viewQuote(\''+q.id+'\')" style="font-weight:bold;color:#2b7be4;">'+(q.number||'-')+'</a></td><td>'+(q.customerName||'-')+'</td><td>'+(q.date||'-')+'</td><td>'+(q.validUntil||'-')+'</td><td>¥'+(Number(q.total)||0).toFixed(2)+'</td><td><span class="tag '+cls+'">'+(q.status||'待确认')+'</span></td></tr>';}).join(''):'<tr><td colspan="6" class="text-center text-muted">暂无报价</td></tr>';}
+            const expired=quotes.filter(q=>q.validUntil&&q.validUntil<todayStr&&q.status!=='成交下单'&&q.status!=='无效报价').sort((a,b)=>(a.validUntil||'').localeCompare(b.validUntil||''));
+            const ec=document.getElementById('expiredQuotesCard'), eb=document.getElementById('expiredQuotesBody'); if(ec&&eb){ec.style.display=expired.length?'block':'none';eb.innerHTML=expired.map(q=>'<tr class="expired-row"><td><a href="javascript:void(0)" onclick="viewQuote(\''+q.id+'\')">'+(q.number||'-')+'</a></td><td>'+(q.customerName||'-')+'</td><td>'+q.validUntil+'</td><td>¥'+(Number(q.total)||0).toFixed(2)+'</td><td><span class="tag tag-expired">已过期</span></td></tr>').join('');}
+            const follow=quotes.filter(q=>q.followUpDate&&q.status!=='成交下单'&&q.status!=='无效报价').filter(q=>{const d=parseDate(q.followUpDate);return d&&Math.abs((d-today)/86400000)<=7;}).sort((a,b)=>(a.followUpDate||'').localeCompare(b.followUpDate||''));
+            const fc=document.getElementById('followupCard'), fb=document.getElementById('followupQuotesBody'); if(fc&&fb){fc.style.display=follow.length?'block':'none';fb.innerHTML=follow.map(q=>{const d=parseDate(q.followUpDate),diff=Math.ceil((d-today)/86400000),label=diff<0?'已逾期'+Math.abs(diff)+'天':diff===0?'今天':'还有'+diff+'天',cls=diff<0?'tag-danger':diff<=3?'tag-warning':'tag-info';return '<tr><td><a href="javascript:void(0)" onclick="viewQuote(\''+q.id+'\')">'+(q.number||'-')+'</a></td><td>'+(q.customerName||'-')+'</td><td>'+q.followUpDate+'</td><td>¥'+(Number(q.total)||0).toFixed(2)+'</td><td><span class="tag '+cls+'">'+label+'</span></td></tr>';}).join('');}
+        }
+        function renderCustomers() {
+            const tbody=document.getElementById('customersBody');
+            if(!tbody)return;
+            if(!DB.customers.length){tbody.innerHTML='<tr><td colspan="10" class="text-center text-muted">暂无客户，请先创建报价单</td></tr>';return;}
+            tbody.innerHTML=DB.customers.map(c=>'<tr><td>'+(c.idType||'-')+'</td><td>'+(c.idNumber||'-')+'</td><td>'+(c.customerType||'-')+'</td><td><strong>'+(c.name||'-')+'</strong></td><td>'+(c.phone||'-')+'</td><td>'+(c.wechat||'-')+'</td><td>'+(c.address||'-')+'</td><td>'+(c.email||'-')+'</td><td>'+(c.lastQuoteDate||'-')+'</td><td><button class="btn btn-xs btn-outline" onclick="editCustomer(\''+c.id+'\')">编辑</button> <button class="btn btn-xs btn-danger" onclick="deleteCustomer(\''+c.id+'\')">删除</button></td></tr>').join('');
+        }
+        async function deleteCustomer(id){const c=DB.customers.find(x=>x.id===id);if(!c)return;const n=DB.quotes.filter(q=>getCustomerKey(q.customerType,q.customerIdType,q.customerIdNumber)===c.key).length;if(!confirm(n?'客户“'+(c.name||c.idNumber||'未命名客户')+'”有 '+n+' 张历史报价单。删除档案不会删除报价单，是否继续？':'确定删除客户“'+(c.name||c.idNumber||'未命名客户')+'”吗？'))return;DB.customers=DB.customers.filter(x=>x.id!==id);if(await saveData(DB)){renderCustomers();renderDashboard();}}
+        function reconcileCustomerForQuote(oldQuote,customerType,idType,idNumber,quoteDate,customerName){
+            const oldKey=oldQuote?getCustomerKey(oldQuote.customerType,oldQuote.customerIdType,oldQuote.customerIdNumber):'', newKey=getCustomerKey(customerType,idType,idNumber); let oldC=oldKey?DB.customers.find(c=>c.key===oldKey):null, target=DB.customers.find(c=>c.key===newKey);
+            if(oldC&&oldKey!==newKey){if(target&&target.id!==oldC.id){['name','phone','wechat','address','email'].forEach(f=>{if(!target[f]&&oldC[f])target[f]=oldC[f];});DB.customers=DB.customers.filter(c=>c.id!==oldC.id);}else{target=oldC;target.key=newKey;target.customerType=customerType||'';target.idType=idType||'';target.idNumber=idNumber||'';}}
+            if(!target)target=findOrCreateCustomer(customerType,idType,idNumber,quoteDate); if(customerName&&(!target.name||target.name==='未命名客户'))target.name=customerName; if(quoteDate&&(!target.lastQuoteDate||quoteDate>target.lastQuoteDate))target.lastQuoteDate=quoteDate; DB.customers=DB.customers.filter(c=>c.id===target.id||c.key!==newKey); return target;
+        }
+        function editCustomer(id) {
+            const c = DB.customers.find(x => x.id === id);
+            if (!c) return;
+            document.getElementById('ce_name').value = c.name || '';
+            document.getElementById('ce_phone').value = c.phone || '';
+            document.getElementById('ce_wechat').value = c.wechat || '';
+            document.getElementById('ce_address').value = c.address || '';
+            document.getElementById('ce_email').value = c.email || '';
+            document.getElementById('ce_editId').value = c.id;
+            document.getElementById('customerEditModal').classList.add('show');
+        }
+        async function saveCustomerEdit() {
+            const id = document.getElementById('ce_editId').value;
+            const c = DB.customers.find(x => x.id === id);
+            if (!c) return;
+            c.name = document.getElementById('ce_name').value.trim() || c.name;
+            c.phone = document.getElementById('ce_phone').value.trim();
+            c.wechat = document.getElementById('ce_wechat').value.trim();
+            c.address = document.getElementById('ce_address').value.trim();
+            c.email = document.getElementById('ce_email').value.trim();
+            if (await saveData(DB)) { closeModal('customerEditModal'); renderCustomers(); renderDashboard(); }
+        }
+        async function syncCustomersFromQuotes() {
+            const newCustomers = []; const seenKeys = new Set();
+            DB.quotes.forEach(q => {
+                const key = getCustomerKey(q.customerType, q.customerIdType, q.customerIdNumber);
+                if (!key || key === '||') return;
+                if (!seenKeys.has(key)) {
+                    seenKeys.add(key);
+                    const existing = DB.customers.find(c => c.key === key);
+                    if (existing) { if (q.date && q.date > existing.lastQuoteDate) existing.lastQuoteDate = q.date; }
+                    else { const name = (q.customerType || '') + (q.customerIdNumber ? '-' + q.customerIdNumber : ''); newCustomers.push({ id: 'c' + (DB.nextCustomerId++), key: key, customerType: q.customerType || '', idType: q.customerIdType || '', idNumber: q.customerIdNumber || '', name: name, phone: '', wechat: '', address: '', email: '', lastQuoteDate: q.date || '' }); }
+                }
+            });
+            if (newCustomers.length) { DB.customers.push(...newCustomers); if (await saveData(DB)) { renderCustomers(); renderDashboard(); alert('客户同步完成，共更新 ' + newCustomers.length + ' 条新记录'); } }
+            else { alert('没有新客户需要同步'); }
+        }
+
+        let quoteItems = [];
+        function renderQuoteForm() {
+            if (!document.getElementById('quoteDate').value) { const now = new Date(); document.getElementById('quoteDate').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'); }
+            renderQuoteItems();
+        }
+        function addQuoteItem() {
+            const category = document.getElementById('quoteProductCategory').value;
+            if (!category) { alert('请选择产品类别'); return; }
+            quoteItems.push({ category: category, name: '', images: [], material: '', spec: '', process: '', quantity: 1, price: 0, moldFee: 0, leadTime: '', packing: '', remark: '', sampleRequired: '否', sampleFee: 0, sampleRefundable: '否', sampleRefundAmount: 0, sampleLeadTime: '', sampleRemark: '' });
+            renderQuoteItems(); document.getElementById('quoteProductCategory').value = '';
+        }
+        function updateSampleRefundable(idx, value) {
+            if (!quoteItems[idx]) return;
+            quoteItems[idx].sampleRefundable = value;
+            if (value !== '自定义') quoteItems[idx].sampleRefundAmount = 0;
+            renderQuoteItems();
+        }
+        function updateItemField(idx, field, value) {
+            if (!quoteItems[idx]) return;
+            if (['quantity','price','moldFee','sampleFee','sampleRefundAmount'].includes(field)) value = Number(value) || 0;
+            quoteItems[idx][field] = value;
+            const row = document.querySelector('#quoteItemsBody tr[data-quote-index="'+idx+'"]');
+            if (row && ['quantity','price','moldFee'].includes(field)) {
+                const item = quoteItems[idx];
+                const subtotal = (Number(item.price)||0)*(Number(item.quantity)||0)+(Number(item.moldFee)||0);
+                if (row.cells[9]) row.cells[9].textContent = '¥'+subtotal.toFixed(2);
+            }
+            const total = quoteItems.reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.quantity)||0)+(Number(item.moldFee)||0),0);
+            const totalDisplay=document.getElementById('quoteTotalDisplay');
+            if(totalDisplay) totalDisplay.textContent='¥'+total.toFixed(2);
+        }
+        function removeQuoteItem(idx) { if(!confirm('删除该行？')) return; quoteItems.splice(idx, 1); renderQuoteItems(); }
+        function renderQuoteItems() {
+            const tbody = document.getElementById('quoteItemsBody');
+            const sampleContainer = document.getElementById('sampleInfoContainer');
+            const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+            if (!quoteItems.length) {
+                tbody.innerHTML = '<tr><td colspan="14" class="text-center text-muted">请添加产品行</td></tr>';
+                sampleContainer.innerHTML = '';
+                document.getElementById('quoteTotalDisplay').textContent = '¥0.00';
+                return;
+            }
+            let total = 0;
+            tbody.innerHTML = quoteItems.map((item, idx) => {
+                const price = Number(item.price) || 0, qty = Number(item.quantity) || 0, mold = Number(item.moldFee) || 0;
+                const subtotal = price * qty + mold; total += subtotal;
+                let imgThumbs = '';
+                if (item.images && item.images.length > 0) {
+                    imgThumbs = '<div class="img-thumbnails">' + item.images.map((img, i) => {
+                        const src = String(img.filename || '').startsWith('data:image/') ? img.filename : '/api/image?name=' + encodeURIComponent(img.filename || '');
+                        return '<span class="img-thumb-wrap"><img src="'+src+'" class="img-thumb" onclick="viewFullImage(\''+src.replace(/'/g,"%27")+'\', '+(i+1)+', '+item.images.length+')" title="点击查看大图"><button type="button" class="img-delete-btn" onclick="event.stopPropagation();deleteQuoteImage('+idx+','+i+')" title="删除图片">×</button></span>';
+                    }).join('') + '</div>';
+                }
+                return '<tr data-quote-index="'+idx+'">'+
+                    '<td>'+(idx+1)+'</td>'+
+                    '<td><input type="text" class="table-input" value="'+esc(item.name)+'" oninput="updateItemField('+idx+',\'name\',this.value)"></td>'+
+                    '<td style="min-width:140px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;width:100%;"><input type="text" class="table-input" value="" placeholder="点击或Ctrl+V贴图" onpaste="handlePasteImage(event,'+idx+',this)" style="flex:1;"><input type="file" accept="image/*" style="font-size:11px;width:100%;" onchange="uploadImageMulti('+idx+',this)"></div>'+imgThumbs+'</td>'+
+                    '<td><input type="text" class="table-input" value="'+esc(item.material)+'" oninput="updateItemField('+idx+',\'material\',this.value)"></td>'+
+                    '<td><textarea class="table-textarea" rows="1" oninput="updateItemField('+idx+',\'spec\',this.value)">'+esc(item.spec)+'</textarea></td>'+
+                    '<td><textarea class="table-textarea" rows="1" oninput="updateItemField('+idx+',\'process\',this.value)">'+esc(item.process)+'</textarea></td>'+
+                    '<td><input type="number" min="0" step="1" class="table-input quote-table-no-spinner" value="'+qty+'" style="width:60px;" oninput="updateItemField('+idx+',\'quantity\',parseInt(this.value)||0)"></td>'+
+                    '<td><input type="number" step="0.01" class="table-input quote-table-no-spinner" value="'+price+'" style="width:78px;" oninput="updateItemField('+idx+',\'price\',parseFloat(this.value)||0)"></td>'+
+                    '<td><input type="number" step="0.01" class="table-input quote-table-no-spinner" value="'+mold+'" style="width:108px;" oninput="updateItemField('+idx+',\'moldFee\',parseFloat(this.value)||0)"></td>'+
+                    '<td>¥'+subtotal.toFixed(2)+'</td>'+
+                    '<td><input type="text" class="table-input" value="'+esc(item.leadTime)+'" oninput="updateItemField('+idx+',\'leadTime\',this.value)"></td>'+
+                    '<td><textarea class="table-textarea" rows="1" oninput="updateItemField('+idx+',\'packing\',this.value)">'+esc(item.packing)+'</textarea></td>'+
+                    '<td><textarea class="table-textarea" rows="1" oninput="updateItemField('+idx+',\'remark\',this.value)">'+esc(item.remark)+'</textarea></td>'+
+                    '<td><button class="btn btn-xs btn-danger" onclick="removeQuoteItem('+idx+')" style="padding:2px 10px;">删除</button></td></tr>';
+            }).join('');
+            document.getElementById('quoteTotalDisplay').textContent = '¥' + total.toFixed(2);
+            let sampleHtml = '<div class="card sample-management-card" style="margin-top:12px;padding:16px 20px;border:1px solid #d9c6a5;border-top:4px solid #16283f;background:#fffdfa;"><div class="card-title" style="margin-bottom:8px;color:#16283f;"> <span style="display:inline-flex;align-items:center;gap:8px;"><span style="display:inline-block;width:4px;height:18px;background:#b58a45;border-radius:1px;"></span>打样信息（按产品）</span><span style="font-size:11px;color:#8a6b39;letter-spacing:1px;font-weight:600;">SAMPLE MANAGEMENT</span></div><div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px;">';
+            sampleHtml += quoteItems.map((item, idx) => '<div style="border:1px solid #eaedf3;border-radius:8px;padding:12px;background:#fafbfc;"><div style="font-weight:600;margin-bottom:6px;">'+(idx+1)+'. '+esc(item.name || '未命名')+'</div><div style="display:flex;flex-direction:column;gap:6px;font-size:13px;"><div><label>是否打样: </label><select onchange="updateItemField('+idx+',\'sampleRequired\',this.value)"><option value="否" '+(item.sampleRequired==='否'?'selected':'')+'>否</option><option value="是" '+(item.sampleRequired==='是'?'selected':'')+'>是</option></select></div><div><label>打样费用: </label><input type="number" step="0.01" value="'+(Number(item.sampleFee)||0)+'" style="width:80px;" oninput="updateItemField('+idx+',\'sampleFee\',parseFloat(this.value)||0)"></div><div><label>下单可退: </label><select onchange="updateSampleRefundable('+idx+',this.value)"><option value="否" '+((!item.sampleRefundable || item.sampleRefundable==='否')?'selected':'')+'>否</option><option value="是" '+(item.sampleRefundable==='是'?'selected':'')+'>是</option><option value="自定义" '+(item.sampleRefundable==='自定义'?'selected':'')+'>自定义</option></select><input type="number" step="0.01" min="0" value="'+(Number(item.sampleRefundAmount)||0)+'" placeholder="退多少元" style="width:90px;display:'+(item.sampleRefundable==='自定义'?'inline-block':'none')+';margin-left:6px;" oninput="updateItemField('+idx+',\'sampleRefundAmount\',parseFloat(this.value)||0)"> 元</div><div><label>打样工期: </label><input type="text" value="'+esc(item.sampleLeadTime)+'" oninput="updateItemField('+idx+',\'sampleLeadTime\',this.value)" style="width:100%;"></div><div><label>打样备注: </label><textarea rows="2" oninput="updateItemField('+idx+',\'sampleRemark\',this.value)" style="width:100%;">'+esc(item.sampleRemark||'')+'</textarea></div></div></div>').join('');
+            sampleHtml += '</div></div>'; sampleContainer.innerHTML = sampleHtml;
+        }
+
+        function resetQuoteForm() {
+            if (quoteItems.length && !confirm('清空当前报价内容？')) return;
+            quoteItems = [];
+            document.getElementById('quoteCustomerType').value = ''; document.getElementById('quoteDate').value = '';
+            document.getElementById('quoteValidity').value = '30'; document.getElementById('quoteFollowUp').value = '';
+            document.getElementById('quoteIdType').value = ''; document.getElementById('quoteIdNumber').value = '';
+            document.getElementById('quoteRemark').value = ''; document.getElementById('quoteShowTotal').value = 'show';
+            const now = new Date(); document.getElementById('quoteDate').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+            document.getElementById('editQuoteId').value = ''; renderQuoteItems();
+        }
+        async function saveQuote() {
+            const customerType = document.getElementById('quoteCustomerType').value; const customerIdNumber = document.getElementById('quoteIdNumber').value.trim();
+            if (!customerType && !customerIdNumber) { alert('请至少填写客户类型或客户ID号码'); return; }
+            if (!quoteItems.length) { alert('请至少添加一行产品'); return; }
+            for(let item of quoteItems) { if (!item.category) { alert('请检查产品行，必须为每一行选择【产品类别】！'); return; } }
+            const date = document.getElementById('quoteDate').value; const validityDays = parseInt(document.getElementById('quoteValidity').value, 10);
+            const validUntil = new Date(date); validUntil.setDate(validUntil.getDate()+validityDays);
+            const total = quoteItems.reduce((s,item) => s + item.price*item.quantity + item.moldFee, 0);
+            const idType = document.getElementById('quoteIdType').value; const idNumber = document.getElementById('quoteIdNumber').value.trim(); const remark = document.getElementById('quoteRemark').value.trim();
+            const followUpDate = document.getElementById('quoteFollowUp').value || '';
+            let customerName = ''; if (customerType) customerName += customerType; if (idNumber) customerName += (customerName ? '-' : '') + idNumber; if (!customerName) customerName = '未命名客户';
+            let customer = null;
+            const editId = document.getElementById('editQuoteId').value;
+            if (editId) {
+                const idx = DB.quotes.findIndex(q => q.id === editId);
+                if (idx === -1) { alert('原报价单不存在，请重新保存'); return; }
+                // 修订留痕：记录变更
+                const oldQuote = editingQuoteSnapshot && editingQuoteSnapshot.id === editId
+                    ? editingQuoteSnapshot
+                    : JSON.parse(JSON.stringify(DB.quotes[idx]));
+                customer = reconcileCustomerForQuote(DB.quotes[idx], customerType, idType, idNumber, date, customerName);
+                const changes = [];
+                const fieldsToCheck = ['customerType','customerIdType','customerIdNumber','customerName','date','validUntil','validityDays','total','remark','followUpDate','showTotal'];
+                // 更简洁的变更比较
+                const fieldLabels = {customerType:'客户类型',customerIdType:'ID类型',customerIdNumber:'ID号码',customerName:'客户名称',date:'报价日期',validityDays:'有效期',total:'合计金额',remark:'备注',followUpDate:'跟进日期',showTotal:'报价总额显示'};
+                const newQuoteObj = {customerType, customerIdType:idType, customerIdNumber:idNumber, customerName, date, validUntil:validUntil.toISOString().slice(0,10), validityDays, total, remark, followUpDate, showTotal: document.getElementById('quoteShowTotal')?.value !== 'hide'};
+                fieldsToCheck.forEach(f => {
+                    if (f === 'validUntil') return; // 跳过，用validityDays代替
+                    if (f === 'total') return; // 跳过自动计算字段
+                    const oldVal = oldQuote[f];
+                    const newVal = newQuoteObj[f];
+                    if (String(oldVal) !== String(newVal)) {
+                        changes.push({field: fieldLabels[f] || f, old: oldVal !== undefined ? oldVal : '', new: newVal});
+                    }
+                });
+                // 检查items变更
+                const oldItems = oldQuote.items || [];
+                const newItems = JSON.parse(JSON.stringify(quoteItems));
+                if (oldItems.length !== newItems.length) {
+                    changes.push({field: '产品行数量', old: oldItems.length, new: newItems.length});
+                } else {
+                    oldItems.forEach((oi, i) => {
+                        const ni = newItems[i];
+                        if (ni) {
+                            ['name','material','spec','process','quantity','price','moldFee','leadTime','packing','remark','sampleRequired','sampleFee','sampleRefundable','sampleRefundAmount','sampleLeadTime','sampleRemark'].forEach(f => {
+                                if (String(oi[f] ?? '') !== String(ni[f] ?? '')) {
+                                    changes.push({field: '产品'+(i+1)+'.'+f, old: oi[f], new: ni[f]});
+                                }
+                            });
+                            const oldImages = JSON.stringify(oi.images || (oi.imageUrl ? [{filename: oi.imageUrl}] : []));
+                            if(JSON.stringify(oi.quantityTiers||[])!==JSON.stringify(ni.quantityTiers||[]))changes.push({field:'产品'+(i+1)+'.数量档位',old:JSON.stringify(oi.quantityTiers||[]),new:JSON.stringify(ni.quantityTiers||[])});
+                            const newImages = JSON.stringify(ni.images || []);
+                            if (oldImages !== newImages) {
+                                changes.push({field: '产品'+(i+1)+'.设计图', old: '图片版本/数量已变化', new: '图片版本/数量已变化'});
+                            }
+                        }
+                    });
+                }
+                // 保存前明确提示用户，并将本次修改作为修订记录保存
+                if (!changes.length) {
+                    window.quoteSaveNotice('当前报价没有新增修改，无需重复保存。');
+                    return;
+                }
+                const changeSummary = changes.map(c => '• ' + c.field + '：' + (c.old === '' || c.old === undefined ? '空' : c.old) + ' → ' + (c.new === '' || c.new === undefined ? '空' : c.new)).join('\n');
+                if (!(await window.confirmQuoteRevision(changeSummary))) return;
+
+                // 保存修订记录
+                const historyEntry = {
+                    timestamp: Date.now(),
+                    action: '修改',
+                    changes: changes
+                };
+                if (!oldQuote.history) oldQuote.history = [];
+                oldQuote.history.push(historyEntry);
+                // 更新报价单
+                DB.quotes[idx] = { ...oldQuote, customerType, customerIdType: idType, customerIdNumber: idNumber, customerName, date, validUntil: validUntil.toISOString().slice(0,10), validityDays, items: JSON.parse(JSON.stringify(quoteItems)), total, remark, followUpDate, showTotal: document.getElementById('quoteShowTotal')?.value !== 'hide', modifiedAt: Date.now() };
+                const saved = await saveData(DB);
+                if (!saved) {
+                    alert('❌ 报价单修改保存失败！\n请不要关闭当前页面，数据仍保留在编辑状态。');
+                    return;
+                }
+                const savedNumber = DB.quotes[idx].number;
+                quoteItems = [];
+                renderQuoteItems();
+                renderQuoteForm();
+                renderDashboard();
+                renderQuotes();
+                renderDeals();
+                window.quoteSaveNotice('报价单 '+savedNumber+' 已保存，修改已记入修订历史。');
+                editingQuoteSnapshot = null;
+                navigateTo('quotes');
+                return;
+            }
+            // 新建报价单
+            customer = reconcileCustomerForQuote(null, customerType, idType, idNumber, date, customerName);
+            const quote = { id: genQuoteId(), number: genQuoteNumber(), customerName, customerType, customerIdType: idType, customerIdNumber: idNumber, date, validUntil: validUntil.toISOString().slice(0,10), validityDays, items: JSON.parse(JSON.stringify(quoteItems)), total, showTotal: document.getElementById('quoteShowTotal')?.value !== 'hide', status: '待确认', remark, followUpDate, createdAt: Date.now(), history: [{timestamp: Date.now(), action: '创建', changes: []}] };
+            DB.quotes.push(quote); if (await saveData(DB)) { quoteItems = []; renderQuoteItems(); renderQuoteForm(); renderDashboard(); renderQuotes(); renderDeals(); window.quoteSaveNotice('报价单 '+quote.number+' 已保存，合计 ¥'+total.toFixed(2)); navigateTo('quotes'); }
+        }
+
+        function applyQuoteFilters() {
+            const custId = document.getElementById('filterCustId').value.trim();
+            const productName = document.getElementById('filterProductName').value.trim().toLocaleLowerCase();
+            const dateStart = document.getElementById('filterDateStart').value;
+            const dateEnd = document.getElementById('filterDateEnd').value;
+            let filtered = DB.quotes;
+            if (custId) { filtered = filtered.filter(q => (q.customerIdNumber || '').includes(custId) || (q.customerName || '').includes(custId)); }
+            if (productName) {
+                filtered = filtered.filter(q => (q.items || []).some(item =>
+                    [item.name, item.category].some(value => String(value || '').toLocaleLowerCase().includes(productName))
+                ));
+            }
+            if (dateStart) { filtered = filtered.filter(q => q.date >= dateStart); }
+            if (dateEnd) { filtered = filtered.filter(q => q.date <= dateEnd); }
+            quoteHistoryPage = 1;
+            renderQuotes(filtered);
+        }
+        function resetQuoteFilters() {
+            document.getElementById('filterCustId').value = ''; document.getElementById('filterProductName').value = ''; document.getElementById('filterDateStart').value = ''; document.getElementById('filterDateEnd').value = '';
+            quoteHistoryPage = 1;
+            renderQuotes(DB.quotes);
+        }
+        let quoteHistoryList = null;
+        let quoteHistoryPage = 1;
+        function renderQuotes(data, page) {
+            const list = data || DB.quotes;
+            quoteHistoryList = list;
+            if (page !== undefined) quoteHistoryPage = page;
+            const tbody = document.getElementById('quotesBody');
+            const countEl = document.getElementById('quotesCount');
+            const paginationEl = document.getElementById('quotesPagination');
+            const sorted = [...list].sort((a,b) => b.createdAt - a.createdAt);
+            const pageSize = 10;
+            const totalCount = sorted.length;
+            const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+            if (quoteHistoryPage > totalPages) quoteHistoryPage = totalPages;
+            const startIndex = (quoteHistoryPage - 1) * pageSize;
+            const pageItems = sorted.slice(startIndex, startIndex + pageSize);
+
+            if (countEl) countEl.innerHTML = totalCount ? '共 <strong style="color:#16283f;">'+totalCount+'</strong> 张报价单　·　第 '+quoteHistoryPage+' / '+totalPages+' 页' : '共 0 张报价单';
+
+            if (!pageItems.length) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">暂无匹配的报价单</td></tr>';
+                if (paginationEl) paginationEl.innerHTML = '';
+                return;
+            }
+
+            const statusMap = { '待确认':'tag-warning', '成交下单':'tag-success', '无效报价':'tag-danger' };
+            const today = new Date().toISOString().slice(0,10);
+            tbody.innerHTML = pageItems.map(q => {
+                let rowClass = '';
+                let statusTag = '<span class="tag '+(statusMap[q.status]||'tag-warning')+'">'+(q.status||'待确认')+'</span>';
+                if (q.validUntil && q.validUntil < today && q.status !== '成交下单' && q.status !== '无效报价') {
+                    rowClass = ' expired-row';
+                    statusTag = '<span class="tag tag-expired">已过期</span>';
+                }
+                let followupLabel = '-';
+                if (q.followUpDate) {
+                    const fd = new Date(q.followUpDate), now = new Date();
+                    const diff = Math.ceil((fd - now) / (1000*60*60*24));
+                    if (diff < 0) followupLabel = '<span style="color:#c0392b;">已逾期'+Math.abs(diff)+'天</span>';
+                    else if (diff <= 3) followupLabel = '<span style="color:#b87a0e;">'+q.followUpDate+'</span>';
+                    else followupLabel = q.followUpDate;
+                }
+                const previewItems = (q.items || []).flatMap(item => (item.images || []).map(img => ({
+                    src: String(img.filename || '').startsWith('data:image/') ? img.filename : '/api/image?name=' + encodeURIComponent(img.filename || ''),
+                    name: item.name || ''
+                }))).slice(0, 4);
+                const productPreview = previewItems.length
+                    ? '<div class="history-product-preview">' + previewItems.map((img, pi) =>
+                        '<img src="'+img.src+'" class="history-product-thumb" title="'+img.name.replace(/"/g,'&quot;')+'" onclick="viewFullImage(\''+img.src.replace(/'/g,"%27")+'\', '+(pi+1)+', '+previewItems.length+')" onerror="this.style.display=\'none\'">'
+                      ).join('') + '</div>'
+                    : '<span class="history-product-empty">无图片</span>';
+                return '<tr class="'+rowClass+'"><td><a href="javascript:void(0)" onclick="viewQuote(\''+q.id+'\')" style="font-weight:bold;color:#2b7be4;">'+q.number+'</a></td><td>'+q.customerName+'</td><td>'+productPreview+'</td><td>'+q.date+'</td><td>'+q.validUntil+'</td><td>¥'+(q.total||0).toFixed(2)+'</td><td>'+statusTag+'</td><td>'+followupLabel+'</td><td><button class="btn btn-xs btn-outline" onclick="copyQuoteDirect(\''+q.id+'\')" title="一键复制为新报价">复制</button></td></tr>';
+            }).join('');
+
+            if (paginationEl) {
+                if (totalPages <= 1) {
+                    paginationEl.innerHTML = '';
+                } else {
+                    let html = '<button class="btn btn-outline btn-xs" '+(quoteHistoryPage===1?'disabled':'')+' onclick="renderQuotes(quoteHistoryList,'+(quoteHistoryPage-1)+')">上一页</button>';
+                    const maxButtons = 7;
+                    let from = Math.max(1, quoteHistoryPage - 3), to = Math.min(totalPages, from + maxButtons - 1);
+                    if (to - from < maxButtons - 1) from = Math.max(1, to - maxButtons + 1);
+                    for (let p=from; p<=to; p++) html += '<button class="btn btn-xs '+(p===quoteHistoryPage?'btn-primary':'btn-outline')+'" onclick="renderQuotes(quoteHistoryList,'+p+')">'+p+'</button>';
+                    html += '<button class="btn btn-outline btn-xs" '+(quoteHistoryPage===totalPages?'disabled':'')+' onclick="renderQuotes(quoteHistoryList,'+(quoteHistoryPage+1)+')">下一页</button>';
+                    paginationEl.innerHTML = html;
+                }
+            }
+        }
+
+        function renderDeals() {
+            const tbody = document.getElementById('dealsBody');
+            const deals = DB.quotes.filter(q => q.status === '成交下单');
+            if (!deals.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">暂无已成交的报价单</td></tr>'; return; }
+            const sorted = [...deals].sort((a,b) => b.createdAt - a.createdAt);
+            tbody.innerHTML = sorted.map(q => {
+                let followupLabel = '-';
+                if (q.followUpDate) followupLabel = q.followUpDate;
+                return '<tr><td><a href="javascript:void(0)" onclick="viewQuote(\''+q.id+'\')" style="font-weight:bold;color:#2b7be4;">'+q.number+'</a></td><td>'+q.customerName+'</td><td>'+q.date+'</td><td>'+q.validUntil+'</td><td>¥'+(q.total||0).toFixed(2)+'</td><td><span class="tag tag-success">'+q.status+'</span></td><td>'+followupLabel+'</td></tr>';
+            }).join('');
+        }
+
+        function viewQuote(id) {
+            const q = DB.quotes.find(x => x.id === id);
+            if (!q) { alert('报价单不存在'); return; }
+            currentViewingQuoteId = id;
+            renderPreviewContent(buildQuoteHTML(q));
+            document.getElementById('detailStatusSelect').style.display = 'inline-block'; document.getElementById('detailStatusSelect').value = q.status || '待确认';
+            document.querySelector('#quoteModal .modal-footer .btn-primary').style.display = 'inline-flex';
+            document.querySelector('#quoteModal .modal-footer .btn-warning').style.display = 'inline-flex';
+            document.querySelector('#quoteModal .modal-footer .btn-outline').style.display = 'inline-flex';
+            document.querySelector('#quoteModal .modal-footer .btn-danger').style.display = 'inline-flex';
+            const exportBtn = document.getElementById('btnExportQuoteExcel'); if (exportBtn) exportBtn.style.display = 'inline-flex';
+            document.getElementById('quoteModal').classList.add('show');
+        }
+
+        // ========================================================================
+        // 核心修改：buildQuoteHTML 函数中，为所有文字列添加 text-center，
+        // 并且总额行改为 text-align:center
+        // ========================================================================
+        function buildQuoteHTML(q) {
+            const st = DB.settings || {};
+            const companyName = st.companyName || '温州市中禾工艺品有限公司';
+            const contact = st.contact || '周先生 18968858818（微信同号）';
+            const email = st.email || '2958282626@qq.com';
+            const address = st.address || '浙江省·温州市·平阳县滨海新区海华路136号';
+            const postalCode = st.postalCode || '325400';
+            const validityText = q.validUntil ? '报价有效期：'+(q.validityDays ?? 30)+'天（至 '+q.validUntil+'）' : '报价有效期：30天';
+            const today = new Date().toISOString().slice(0,10);
+            let warningsHtml = '';
+            if (q.validUntil && q.validUntil < today && q.status !== '成交下单' && q.status !== '无效报价') {
+                warningsHtml += '<div class="expired-banner">该报价单已于 '+q.validUntil+' 过期，请及时跟进客户。</div>';
+            }
+            if (q.followUpDate) {
+                const fd = new Date(q.followUpDate), now = new Date();
+                const diff = Math.ceil((fd-now)/(1000*60*60*24));
+                if (diff < 0) warningsHtml += '<div class="followup-banner">跟进日期已逾期 '+Math.abs(diff)+' 天，请尽快联系客户。</div>';
+                else if (diff <= 3) warningsHtml += '<div class="followup-banner">提醒：跟进日期为 '+q.followUpDate+'（'+(diff===0?'今天':'还有'+diff+'天')+'）。</div>';
+            }
+            let itemsHtml='', total=0;
+            (q.items||[]).forEach((item,idx)=>{
+                const price = Number(item.price)||0, mold = Number(item.moldFee)||0, qty = Number(item.quantity)||0;
+                const subtotal = price*qty + mold; total += subtotal;
+                let imgsHtml='无';
+                if (item.images && item.images.length) {
+                    imgsHtml = '<div class="multi-img-row">'+item.images.map((img,i)=>{
+                        const src = img.filename && img.filename.startsWith('data:image/') ? img.filename : '/api/image?name='+encodeURIComponent(img.filename||'');
+                        return '<div><img src="'+src+'" class="preview-img" onclick="viewFullImage(\''+src+'\', '+(i+1)+', '+item.images.length+')" style="cursor:pointer;"><div class="img-version-badge">V'+(i+1)+'</div></div>';
+                    }).join('')+'</div>';
+                }
+                // 所有文字列加 text-center，数值列保持 text-right
+                itemsHtml += '<tr><td class="text-center">'+(idx+1)+'</td>' +
+    '<td class="text-center"><strong>'+ (item.name||'-') +'</strong></td>' +
+    '<td class="text-center">'+imgsHtml+'</td>' +
+    '<td class="text-center">'+(item.material||'-')+'</td>' +
+    '<td class="text-center" style="white-space:pre-wrap;word-break:break-word;">'+((item.spec||'-').replace(/\n/g,'<br>'))+'</td>' +
+    '<td class="text-center" style="white-space:pre-wrap;word-break:break-word;">'+((item.process||'-').replace(/\n/g,'<br>'))+'</td>' +
+    '<td class="text-center numeric">'+qty+'</td>' +
+    '<td class="text-center numeric">¥'+price.toFixed(2)+'</td>' +
+    '<td class="text-center numeric">¥'+mold.toFixed(2)+'</td>' +
+    '<td class="text-center numeric">¥'+subtotal.toFixed(2)+'</td>' +
+    '<td class="text-center">'+(item.leadTime||'-')+'</td>' +
+    '<td class="text-center">'+((item.packing||'-').replace(/\n/g,'<br>'))+'</td>' +
+    '<td class="text-center">'+((item.remark||'').replace(/\n/g,'<br>'))+'</td></tr>';
+            });
+            // 总额行居中
+            if (q.showTotal !== false) itemsHtml += '<tr class="total-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="total-label">报价总额</td><td class="total-amount">¥'+total.toFixed(2)+'</td><td></td><td></td><td></td></tr>';
+
+            let customerInfo = '<strong>客户：</strong>'+(q.customerName || (q.customerType ? q.customerType+(q.customerIdNumber?'-'+q.customerIdNumber:'') : '未知'));
+            if(q.customerType) customerInfo += ' ｜ 类型：'+q.customerType;
+            if(q.customerIdType && q.customerIdNumber) customerInfo += ' ｜ '+q.customerIdType+'：'+q.customerIdNumber;
+            let followupInfo='';
+            if(q.followUpDate) followupInfo='<div style="margin-top:2px;"><strong>跟进日期：</strong>'+q.followUpDate+'</div>';
+            let sampleHtml='';
+            if((q.items||[]).some(i=>i.sampleRequired==='是'||i.sampleFee>0||i.sampleRefundable==='自定义'||Number(i.sampleRefundAmount)>0||i.sampleLeadTime||i.sampleRemark)){
+                sampleHtml='<div class="quote-sample"><div class="quote-section-title">打样信息</div>'+q.items.map((item,idx)=>{
+                    if(item.sampleRequired==='否'&&!item.sampleFee&&!item.sampleLeadTime&&!item.sampleRemark)return '';
+                    return '<div class="sample-line"><strong>'+(idx+1)+'. '+(item.name||'-')+'</strong><span>打样：'+(item.sampleRequired||'否')+'</span><span>费用：¥'+(Number(item.sampleFee)||0).toFixed(2)+'</span><span>可退：'+(item.sampleRefundable==='自定义'?('¥'+(Number(item.sampleRefundAmount)||0).toFixed(2)):(item.sampleRefundable||'否'))+'</span><span>工期：'+(item.sampleLeadTime||'-')+'</span><span>备注：'+(item.sampleRemark||'-').replace(/\n/g,'<br>')+'</span></div>';
+                }).filter(Boolean).join('')+'</div>';
+            }
+            return warningsHtml +
+                '<div class="header">'+
+                  '<div><div class="company">'+companyName+'</div><small>联系人：'+contact+' ｜ E-Mail：'+email+'<br>工厂地址：'+address+' ｜ 邮编：'+postalCode+'</small></div>'+ 
+                  '<div class="info"><div><strong>报价单号：</strong>'+q.number+'</div><div><strong>报价日期：</strong>'+q.date+'</div></div>'+ 
+                '</div>'+
+                '<div class="quote-doc-title"><span class="cn">产品报价单</span><span class="en">QUOTATION</span></div>'+
+                '<div class="quote-customer-bar"><div>'+customerInfo+'</div><div><strong>状态：</strong>'+(q.status||'待确认')+'</div><div>'+(followupInfo||'')+'</div><div class="quote-validity"><span class="quote-validity-label">有效期</span><strong>'+((q.validUntil ? ((q.validityDays ?? 30)+'天（至 '+q.validUntil+'）') : '30天'))+'</strong></div></div>'+ 
+                (q.remark ? '<div class="quote-top-remark"><strong>备注：</strong>'+q.remark+'</div>' : '')+
+                '<div class="table-wrap"><table class="preview-table"><thead><tr><th>序号</th><th>品名</th><th>设计/参考图</th><th>材质</th><th>规格</th><th>工艺要求</th><th>数量<br>(pcs)</th><th>单价<br>(元/pcs)</th><th>模具/版费<br>(元)</th><th>合计<br>(元)</th><th>工期</th><th>装箱数据</th><th>备注</th></tr></thead><tbody>'+itemsHtml+'</tbody></table></div>'+sampleHtml+
+                '<div class="quote-footer-note">本报价单仅供参考，最终解释权归 '+companyName+' 所有。</div>';
+        }
+        // ========================================================================
+
+        async function updateQuoteStatusFromDetail() {
+            const q = DB.quotes.find(x => x.id === currentViewingQuoteId); if (!q) return;
+            const newStatus = document.getElementById('detailStatusSelect').value;
+            if (q.status === newStatus) { alert('状态未变化'); return; }
+            if (confirm('将报价单 '+q.number+' 状态从 "'+q.status+'" 改为 "'+newStatus+'"？')) {
+                q.status = newStatus;
+                if (!q.history) q.history = [];
+                q.history.push({timestamp: Date.now(), action: '状态变更', changes: [{field: '状态', old: q.status === newStatus ? newStatus : q.status, new: newStatus}]});
+                if (await saveData(DB)) { closeModal('quoteModal'); renderQuotes(); renderDeals(); renderDashboard(); }
+            }
+        }
+        function editQuoteFromDetail() {
+            const q = DB.quotes.find(x => x.id === currentViewingQuoteId); if (!q) return;
+            closeModal('quoteModal');
+            document.getElementById('quoteCustomerType').value = q.customerType || ''; document.getElementById('quoteDate').value = q.date || '';
+            document.getElementById('quoteValidity').value = String(q.validityDays ?? 30);
+            document.getElementById('quoteFollowUp').value = q.followUpDate || '';
+            document.getElementById('quoteIdType').value = q.customerIdType || '';
+            document.getElementById('quoteIdNumber').value = q.customerIdNumber || ''; document.getElementById('quoteRemark').value = q.remark || '';
+            document.getElementById('quoteShowTotal').value = q.showTotal === false ? 'hide' : 'show';
+            // 迁移旧 imageUrl 到 images 格式
+            // 编辑时必须与原报价单完全断开引用，否则修改输入框会直接改掉 DB 中的旧报价，
+            // 导致后面的“修改检测”比较的是同一个对象，从而误判为“未检测到修改”。
+            editingQuoteSnapshot = JSON.parse(JSON.stringify(q));
+            quoteItems = JSON.parse(JSON.stringify(q.items || [])).map(item => {
+                if (item.imageUrl && !item.images) {
+                    item.images = [{filename: item.imageUrl, version: 1, timestamp: Date.now(), note: ''}];
+                    delete item.imageUrl;
+                }
+                if (!item.images) item.images = [];
+                return item;
+            });
+            document.getElementById('editQuoteId').value = q.id; renderQuoteItems(); navigateTo('quote-new');
+        }
+        async function copyQuoteFromDetail() {
+            const q = DB.quotes.find(x => x.id === currentViewingQuoteId); if (!q) return;
+            const newQuote = JSON.parse(JSON.stringify(q));
+            newQuote.id = genQuoteId(); newQuote.number = genQuoteNumber(); newQuote.status = '待确认';
+            newQuote.date = new Date().toISOString().slice(0,10); newQuote.createdAt = Date.now();
+            delete newQuote.modifiedAt;
+            const validityDays = q.validityDays ?? 30; const validUntil = new Date(newQuote.date); validUntil.setDate(validUntil.getDate() + validityDays);
+            newQuote.validUntil = validUntil.toISOString().slice(0,10);
+            newQuote.remark = q.remark ? q.remark + ' (复制)' : '(复制)';
+            newQuote.followUpDate = '';
+            newQuote.history = [{timestamp: Date.now(), action: '复制', changes: [{field: '来源', old: q.number, new: '从报价单 '+q.number+' 复制'}]}];
+            DB.quotes.push(newQuote); if (await saveData(DB)) { closeModal('quoteModal'); renderQuotes(); renderDeals(); renderDashboard(); alert('✅ 报价单复制成功！\n新编号：' + newQuote.number); }
+        }
+        // 新增：直接从列表复制（一键复制）
+        async function copyQuoteDirect(id) {
+            const q = DB.quotes.find(x => x.id === id); if (!q) return;
+            if (!confirm('将报价单 '+q.number+' 复制为新报价？\n所有产品行、客户信息、设计图将被复制。')) return;
+            const newQuote = JSON.parse(JSON.stringify(q));
+            newQuote.id = genQuoteId(); newQuote.number = genQuoteNumber(); newQuote.status = '待确认';
+            newQuote.date = new Date().toISOString().slice(0,10); newQuote.createdAt = Date.now();
+            delete newQuote.modifiedAt;
+            const validityDays = q.validityDays ?? 30; const validUntil = new Date(newQuote.date); validUntil.setDate(validUntil.getDate() + validityDays);
+            newQuote.validUntil = validUntil.toISOString().slice(0,10);
+            newQuote.remark = q.remark ? q.remark + ' (复制)' : '(复制)';
+            newQuote.followUpDate = '';
+            newQuote.history = [{timestamp: Date.now(), action: '复制', changes: [{field: '来源', old: q.number, new: '从报价单 '+q.number+' 复制'}]}];
+            DB.quotes.push(newQuote); if (await saveData(DB)) { renderQuotes(); renderDeals(); renderDashboard(); alert('✅ 报价单复制成功！\n新编号：' + newQuote.number); }
+        }
+        async function deleteQuoteFromDetail() {
+            if (!confirm('确定要删除该报价单吗？此操作不可恢复！')) return;
+            const q = DB.quotes.find(x => x.id === currentViewingQuoteId);
+            if (!q) return;
+            const key = getCustomerKey(q.customerType, q.customerIdType, q.customerIdNumber);
+            const otherQuotes = DB.quotes.filter(x => x.id !== currentViewingQuoteId && getCustomerKey(x.customerType, x.customerIdType, x.customerIdNumber) === key);
+            DB.quotes = DB.quotes.filter(x => x.id !== currentViewingQuoteId);
+            if (otherQuotes.length === 0 && key && key !== '||') {
+                DB.customers = DB.customers.filter(c => c.key !== key);
+            }
+            if (await saveData(DB)) { closeModal('quoteModal'); renderQuotes(); renderDeals(); renderDashboard(); renderCustomers(); }
+        }
+
+        // 新增：显示修订记录
+        function showRevisionHistory() {
+            const q = DB.quotes.find(x => x.id === currentViewingQuoteId);
+            if (!q) return;
+            const content = document.getElementById('revisionContent');
+            if (!q.history || q.history.length === 0) {
+                content.innerHTML = '<div class="text-center text-muted" style="padding:40px;">该报价单暂无修订记录</div>';
+            } else {
+                let html = '<div class="revision-timeline">';
+                // 倒序显示（最新的在前）
+                const history = [...q.history].reverse();
+                history.forEach((entry, idx) => {
+                    const time = new Date(entry.timestamp).toLocaleString('zh-CN');
+                    let changesHtml = '';
+                    if (entry.changes && entry.changes.length > 0) {
+                        changesHtml = entry.changes.map(c => 
+                            '<div class="change-row"><span class="change-field">'+c.field+'</span>：'
+                            + '<span class="change-old">'+(c.old !== undefined ? c.old : '')+'</span>'
+                            + ' → '
+                            + '<span class="change-new">'+(c.new !== undefined ? c.new : '')+'</span></div>'
+                        ).join('');
+                    } else {
+                        changesHtml = '<div style="font-size:13px;color:#8a9bb5;">'+entry.action+'报价单</div>';
+                    }
+                    html += '<div class="revision-item"><div class="time">'+time+' · '+entry.action+'</div><div class="changes">'+changesHtml+'</div></div>';
+                });
+                html += '</div>';
+                content.innerHTML = html;
+            }
+            document.getElementById('revisionModal').classList.add('show');
+        }
+        // 新增：查看大图
+        function viewFullImage(src, current, total) {
+            document.getElementById('imageViewerImg').src = src;
+            document.getElementById('imageViewerInfo').textContent = current + ' / ' + total;
+            document.getElementById('imageViewerModal').classList.add('show');
+        }
+        // 新增：多图片上传
+        function deleteQuoteImage(idx,imageIndex){if(!quoteItems[idx]||!quoteItems[idx].images||!quoteItems[idx].images[imageIndex])return;if(!confirm('确定删除这张图片吗？'))return;quoteItems[idx].images.splice(imageIndex,1);quoteItems[idx].images.forEach((img,i)=>img.version=i+1);renderQuoteItems();}
+        async function storeImageOnServer(dataUrl, originalName) {
+            const res = await fetch('/api/image', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:dataUrl, filename:originalName||'image.png'})});
+            const data = await res.json().catch(()=>({}));
+            if (!res.ok || !data.name) throw new Error(data.error || '图片保存失败');
+            return data.name;
+        }
+        async function addImageToQuoteItem(idx, dataUrl, originalName) {
+            try {
+                const filename = await storeImageOnServer(dataUrl, originalName);
+                if (!quoteItems[idx].images) quoteItems[idx].images = [];
+                quoteItems[idx].images.push({filename, version: quoteItems[idx].images.length + 1, timestamp: Date.now(), note: ''});
+                renderQuoteItems();
+            } catch(e) { alert('图片保存失败：' + e.message); }
+        }
+        function uploadImageMulti(idx, input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => addImageToQuoteItem(idx, e.target.result, file.name);
+            reader.readAsDataURL(file);
+            input.value = '';
+        }
+        // 修改：粘贴图片（追加到当前行的图片列表）
+        function handlePasteImage(event, idx, inputElement) {
+            const items = event.clipboardData && event.clipboardData.items;
+            if (!items) return;
+            for (let item of items) {
+                if (item.type.startsWith('image/')) {
+                    event.preventDefault();
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = e => addImageToQuoteItem(idx, e.target.result, blob.name || 'pasted-image.png');
+                    reader.readAsDataURL(blob);
+                    break;
+                }
+            }
+        }
+        // 导出 PDF：调用系统打印引擎，在打印窗口选择“保存为 PDF”
+        function exportQuoteToPDF() {
+            const q = DB.quotes.find(x => x.id === currentViewingQuoteId);
+            if (!q) { alert('未找到当前报价单'); return; }
+            const w = window.open('', '_blank', 'width=1400,height=900');
+            if (!w) { alert('浏览器阻止了弹出窗口，请允许本机 ERP 打开打印窗口。'); return; }
+            w.document.write('<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><title>报价单_'+q.number+'</title><style>'+
+                '@page{size:A4 landscape;margin:8mm;}body{font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif;color:#222;font-size:12px;margin:0;}'+
+                '.quote-preview{width:100%;}.header{display:flex;justify-content:space-between;border-bottom:2px solid #222;padding-bottom:10px;margin-bottom:10px}.company{font-size:24px;font-weight:700}.info{text-align:right;line-height:1.7}'+
+                'table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:5px 7px;vertical-align:middle;word-break:break-word}th{background:#f2f6fc;font-weight:700;text-align:center}'+
+                '.preview-img{max-width:90px;max-height:70px;object-fit:contain;display:block;margin:auto;border:1px solid #ddd}.multi-img-row{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}.img-version-badge{display:none}'+
+                '.total-row td{font-weight:700;border-top:2px solid #222}.expired-banner,.followup-banner{padding:6px;margin-bottom:8px;border:1px solid #ddd}.tag{padding:2px 6px;border:1px solid #bbb;border-radius:10px}'+
+                '.quote-preview-fit .preview-table th:nth-child(5),.quote-preview-fit .preview-table td:nth-child(5){width:155px!important;min-width:155px!important}.quote-preview-fit .preview-table th:nth-child(12),.quote-preview-fit .preview-table td:nth-child(12){width:155px!important;min-width:155px!important}'+
+                '</style></head><body><div class="quote-preview">'+buildQuoteHTML(q)+'</div><script>window.onload=function(){setTimeout(function(){window.print();},500)};window.onafterprint=function(){setTimeout(function(){window.close()},300)};<\/script></body></html>');
+            w.document.close();
+        }
+
+        // 修改：导出报价单（支持多图片）
+        async function exportQuoteToExcel() {
+            const q = DB.quotes.find(x => x.id === currentViewingQuoteId);
+            if (!q) { alert('未找到当前报价单'); return; }
+            try {
+                const res = await fetch('/api/export/excel?id=' + encodeURIComponent(q.id), {cache:'no-store'});
+                if (!res.ok) {
+                    const data = await res.json().catch(()=>({}));
+                    throw new Error(data.error || 'Excel 导出失败');
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '报价单_' + q.number + '.xlsx';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(()=>URL.revokeObjectURL(url),1000);
+            } catch(e) {
+                alert('Excel 导出失败：' + e.message);
+            }
+        }
+
+        // 报价表 Tab 导航
+        function getQuoteEditableFields(row) {
+            return Array.from(row.querySelectorAll('input, textarea, select'))
+                .filter(el => {
+                    if (el.disabled || el.readOnly) return false;
+                    if (el.type === 'hidden' || el.type === 'file') return false;
+                    if (el.closest('[style*="display:none"]')) return false;
+                    return true;
+                });
+        }
+        function handleQuoteTabNavigation(event) {
+            if (event.key !== 'Tab') return;
+            const current = event.target;
+            const row = current.closest('#quoteItemsBody tr');
+            if (!row) return;
+            event.preventDefault();
+            const controls = Array.from(row.querySelectorAll('input, textarea, select, button'))
+                .filter(el => !el.disabled && el.offsetParent !== null);
+            const idx = controls.indexOf(current);
+            if (idx >= 0 && idx < controls.length - 1) {
+                controls[idx + 1].focus();
+                if (controls[idx + 1].select) controls[idx + 1].select();
+                return;
+            }
+            const nextRow = row.nextElementSibling;
+            if (nextRow) {
+                const nextControls = Array.from(nextRow.querySelectorAll('input, textarea, select, button'))
+                    .filter(el => !el.disabled && el.offsetParent !== null);
+                if (nextControls.length) {
+                    nextControls[0].focus();
+                    if (nextControls[0].select) nextControls[0].select();
+                }
+            }
+        }
+        document.addEventListener('keydown', handleQuoteTabNavigation, true);
+        function moveToNext(currentElement) {
+            const row = currentElement.closest('#quoteItemsBody tr');
+            if (!row) return false;
+            const fields = getQuoteEditableFields(row);
+            const currentIndex = fields.indexOf(currentElement);
+            if (currentIndex >= 0 && currentIndex < fields.length - 1) {
+                const next = fields[currentIndex + 1];
+                next.focus();
+                if (next.select && next.tagName === 'INPUT' && next.type !== 'number') {
+                    next.select();
+                }
+                return true;
+            }
+            let nextRow = row.nextElementSibling;
+            while (nextRow) {
+                const nextFields = getQuoteEditableFields(nextRow);
+                if (nextFields.length) {
+                    const next = nextFields[0];
+                    next.focus();
+                    if (next.select && next.tagName === 'INPUT' && next.type !== 'number') {
+                        next.select();
+                    }
+                    return true;
+                }
+                nextRow = nextRow.nextElementSibling;
+            }
+            return false;
+        }
+        document.getElementById('quoteItemsBody').addEventListener('keydown', function(e) {
+            if (e.key !== 'Tab' || e.shiftKey) return;
+            const target = e.target;
+            if (!target.matches('input, textarea, select')) return;
+            if (target.type === 'file' || target.disabled || target.readOnly) return;
+            if (moveToNext(target)) { e.preventDefault(); }
+        });
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.querySelectorAll('.modal-overlay').forEach(el => { el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); }); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.show').forEach(el => el.classList.remove('show')); });
+        function exportAllData() {
+            const data = JSON.stringify(normalizeDB(DB), null, 2); const blob = new Blob([data], { type: 'application/json' }); const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = '中禾报价数据_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); URL.revokeObjectURL(url);
+        }
+        async function importAllData(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data || !Array.isArray(data.customers) || !Array.isArray(data.quotes)) { alert('数据格式无效：必须包含 customers 和 quotes。'); return; }
+                    if (!confirm('导入会把文件中的客户和报价单合并到当前数据，不会清空或覆盖当前数据。确定继续？')) return;
+                    DB = mergeImportedData(DB, data);
+                    if (await saveData(DB)) { renderDashboard(); renderCustomers(); renderQuotes(); renderDeals(); renderQuoteForm(); alert('✅ 数据导入合并成功！\n当前数据和导入文件中的客户、报价单、公司信息均已保留。'); }
+                } catch(err) { alert('导入失败：' + err.message); }
+            };
+            reader.readAsText(file); event.target.value = '';
+        }
+        function previewQuote() {
+            try {
+                const customerType = document.getElementById('quoteCustomerType').value;
+                const customerIdNumber = document.getElementById('quoteIdNumber').value.trim();
+                if (!customerType && !customerIdNumber) { alert('请至少填写客户类型或客户ID号码'); return; }
+                if (!quoteItems.length) { alert('请至少添加一行产品'); return; }
+                for(let item of quoteItems) { if (!item.category) { alert('请检查产品行，必须为每一行选择【产品类别】！'); return; } }
+                const date = document.getElementById('quoteDate').value;
+                const validityDays = parseInt(document.getElementById('quoteValidity').value, 10);
+                const validUntil = new Date(date); validUntil.setDate(validUntil.getDate()+validityDays);
+                const total = quoteItems.reduce((s,item) => s + item.price*item.quantity + item.moldFee, 0);
+                let customerName = ''; if (customerType) customerName += customerType; if (customerIdNumber) customerName += (customerName ? '-' : '') + customerIdNumber; if (!customerName) customerName = '未命名客户';
+                const idType = document.getElementById('quoteIdType').value; const idNumber = document.getElementById('quoteIdNumber').value.trim(); const remark = document.getElementById('quoteRemark').value.trim();
+                const followUpDate = document.getElementById('quoteFollowUp').value || '';
+                const fakeQuote = {
+                    number: '预览', date: date, validUntil: validUntil.toISOString().slice(0,10), validityDays: validityDays,
+                    items: quoteItems, total: total, showTotal: document.getElementById('quoteShowTotal')?.value !== 'hide', customerName: customerName || '', customerType: customerType,
+                    customerIdType: idType, customerIdNumber: idNumber, remark: remark, followUpDate: followUpDate,
+                    history: []
+                };
+                renderPreviewContent(buildQuoteHTML(fakeQuote));
+                const modal = document.getElementById('quoteModal');
+                if (modal) {
+                    modal.classList.add('show');
+                    document.getElementById('detailStatusSelect').style.display = 'none';
+                    const btns = modal.querySelectorAll('.modal-footer .btn-primary, .modal-footer .btn-warning, .modal-footer .btn-outline, .modal-footer .btn-danger');
+                    btns.forEach(btn => { if(btn.innerText !== '关闭' && btn.innerText !== '打印') { btn.style.display = 'none'; } });
+                } else { alert('预览弹窗加载失败，请刷新后重试。'); }
+            } catch (e) { alert('预览功能出错: ' + e.message); }
+        }
+        async function startERPAfterLogin(){ const ok=await loadData(); if(!ok)return; if(DB.customers.length===0&&DB.quotes.length>0)syncCustomersFromQuotes(); renderDashboard(); renderQuoteForm(); console.log('中禾报价ERP V7 已启动'); }
+        document.getElementById('authSubmit').addEventListener('click',performAuth);
+        document.getElementById('authLogout').addEventListener('click',logoutERP);
+        document.querySelectorAll('#authUsername,#authPassword,#authPassword2').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();performAuth();}}));
+        (async()=>{if(await checkAuthStatus())await startERPAfterLogin();})();
+    </script>
+<link rel="stylesheet" href="/efficiency.css">
+<script src="/efficiency.js"></script>
+<link rel="stylesheet" href="/business.css">
+<script src="/business.js"></script>
+</body>
+</html>
