@@ -1,0 +1,76 @@
+name: Build Windows Desktop V9
+
+on:
+  push:
+    branches:
+      - desktop-v9-windows-build
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop-v9
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install desktop build dependencies
+        run: python -m pip install -r windows-requirements.txt
+
+      - name: Restore Windows icon
+        shell: pwsh
+        run: |
+          $bytes = [Convert]::FromBase64String((Get-Content app-windows.ico.b64 -Raw))
+          [IO.File]::WriteAllBytes((Join-Path $PWD 'app-windows.ico'), $bytes)
+
+      - name: Build native Windows application
+        shell: cmd
+        run: call build-windows-ci.bat
+
+      - name: Verify packaged resources
+        shell: pwsh
+        run: |
+          $root = 'dist\中禾报价ERP-V9'
+          if (-not (Test-Path "$root\中禾报价ERP-V9.exe")) { throw 'Windows EXE missing' }
+          $assets = Get-ChildItem $root -Recurse -File | Select-Object -ExpandProperty Name
+          foreach ($name in @('index.html','business.css','business.js','efficiency.css','efficiency.js')) {
+            if ($assets -notcontains $name) { throw "Missing packaged resource: $name" }
+          }
+
+      - name: Smoke-test local desktop service
+        shell: pwsh
+        run: |
+          $process = Start-Process 'dist\中禾报价ERP-V9\中禾报价ERP-V9.exe' -PassThru
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 20; $i++) {
+              Start-Sleep -Milliseconds 500
+              try {
+                $response = Invoke-WebRequest 'http://127.0.0.1:8000/' -UseBasicParsing -TimeoutSec 2
+                if ($response.StatusCode -eq 200) { $ready = $true; break }
+              } catch {}
+            }
+            if (-not $ready) { throw 'Desktop service did not start' }
+          } finally {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Create delivery ZIP
+        shell: pwsh
+        run: Compress-Archive -Path 'dist\中禾报价ERP-V9' -DestinationPath '中禾报价ERP-V9-Windows.zip' -Force
+
+      - name: Upload Windows software
+        uses: actions/upload-artifact@v4
+        with:
+          name: 中禾报价ERP-V9-Windows
+          path: desktop-v9/中禾报价ERP-V9-Windows.zip
+          if-no-files-found: error
+          retention-days: 7
