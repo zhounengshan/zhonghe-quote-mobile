@@ -227,6 +227,76 @@
     }));
   }
 
+  function installDataDirectoryPanel() {
+    const modal = document.querySelector('#accountModal .modal');
+    const body = modal?.querySelector('.modal-header + div');
+    if (!modal || !body || document.getElementById('dataDirectoryCard')) return;
+    modal.style.maxWidth = '680px';
+    const cards = body.querySelectorAll(':scope > .card');
+    const panel = document.createElement('div');
+    panel.id = 'dataDirectoryCard';
+    panel.className = 'card';
+    panel.style.cssText = 'padding:16px;margin-bottom:14px;';
+    panel.innerHTML = `
+      <div style="font-weight:650;margin-bottom:5px;">数据存储与同步</div>
+      <div style="font-size:12px;color:#74839a;line-height:1.6;margin-bottom:10px;">Windows 和 Mac 选择同一个百度同步盘“报价系统数据库”文件夹，即可共用报价、图片和账号。</div>
+      <div id="dataDirectoryPath" class="data-directory-box">正在读取数据目录…</div>
+      <div id="dataDirectoryStatus" class="data-directory-status">检查中</div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" type="button" id="chooseDataDirectoryButton">选择同步云数据库文件夹</button>
+        <button class="btn btn-outline btn-sm" type="button" id="refreshDataDirectoryButton">刷新状态</button>
+      </div>`;
+    if (cards[1]) body.insertBefore(panel,cards[1]); else body.append(panel);
+    panel.querySelector('#chooseDataDirectoryButton').addEventListener('click',chooseDataDirectory);
+    panel.querySelector('#refreshDataDirectoryButton').addEventListener('click',loadDataDirectoryInfo);
+  }
+
+  async function getNativeApi() {
+    if (window.waitForNativeApi) return window.waitForNativeApi();
+    return window.pywebview?.api || null;
+  }
+
+  async function loadDataDirectoryInfo() {
+    const path = document.getElementById('dataDirectoryPath');
+    const status = document.getElementById('dataDirectoryStatus');
+    if (!path || !status) return;
+    try {
+      const api = await getNativeApi();
+      if (!api?.get_data_directory) throw new Error('请从桌面软件打开此功能');
+      const info = await api.get_data_directory();
+      path.textContent = info.path || '未设置';
+      status.className = `data-directory-status${info.isSyncedFolder ? ' is-synced' : ''}`;
+      status.textContent = `${info.isSyncedFolder ? '● 已连接同步盘' : '○ 当前为本机目录'} · ${info.hasData ? '已找到报价数据' : '新数据库'} · ${info.hasAuth ? '账号可共用' : '尚未建立账号'}`;
+      const saveStatus = document.getElementById('erpSaveStatus');
+      if (saveStatus) saveStatus.textContent = info.isSyncedFolder ? '同步云数据库已连接' : '本机数据库已连接';
+    } catch (error) {
+      path.textContent = '无法读取目录';
+      status.textContent = error.message || String(error);
+    }
+  }
+
+  async function chooseDataDirectory() {
+    if (!confirm('请选择同步盘中真正存放 data.json、auth.json、images 的“报价系统数据库”文件夹。\n\n切换后软件会重新登录，但不会删除或覆盖任何原有数据。')) return;
+    const button = document.getElementById('chooseDataDirectoryButton');
+    if (button) { button.disabled = true; button.textContent = '正在选择…'; }
+    try {
+      const api = await getNativeApi();
+      if (!api?.choose_data_directory) throw new Error('只有桌面软件可以选择同步目录');
+      const result = await api.choose_data_directory();
+      if (result?.cancelled) return;
+      if (!result?.ok) throw new Error(result?.error || '目录切换失败');
+      alert(`同步数据库已连接：\n${result.path}\n\n即将重新加载并使用该目录中的报价、图片和账号。`);
+      location.reload();
+    } catch (error) {
+      alert('切换数据目录失败：' + (error.message || error));
+    } finally {
+      if (button) { button.disabled = false; button.textContent = '选择同步云数据库文件夹'; }
+    }
+  }
+
+  window.loadDataDirectoryInfo = loadDataDirectoryInfo;
+  window.chooseDataDirectory = chooseDataDirectory;
+
   setBrand();
   cleanHeadings();
   addCommandBar();
@@ -235,5 +305,6 @@
   bindDynamicRendering();
   bindPreviewRendering();
   bindHistoryFilters();
+  installDataDirectoryPanel();
   syncWorkspace();
 })();

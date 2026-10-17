@@ -28,10 +28,26 @@ def user_config_dir():
 
 CONFIG_DIR = user_config_dir()
 DATA_CONFIG_FILE = os.path.join(CONFIG_DIR, 'data_dir.txt')
+REMEMBER_FILE = os.path.join(CONFIG_DIR, 'remembered_login.bin')
 
 def default_data_dir():
     # 默认不放在程序目录，避免升级程序时覆盖业务数据。
     return os.path.join(os.path.expanduser('~'), 'Documents', '中禾报价ERP数据')
+
+def discover_synced_data_dir():
+    """优先发现已经存在的同步盘数据库，不创建、不覆盖任何内容。"""
+    home = os.path.expanduser('~')
+    candidates = [
+        os.path.join(home, '百度同步盘', '桌面文档', '报价系统数据库'),
+        os.path.join(home, '百度同步盘', '报价系统数据库'),
+        os.path.join(home, 'BaiduSyncdisk', '桌面文档', '报价系统数据库'),
+        os.path.join(home, 'BaiduSyncdisk', '报价系统数据库'),
+        os.path.join(home, 'BaiduNetdiskWorkspace', '报价系统数据库'),
+    ]
+    for path in candidates:
+        if os.path.isfile(os.path.join(path, 'data.json')):
+            return path
+    return ''
 
 def resolve_data_dir():
     env_path = os.environ.get('ZHONGHE_ERP_DATA_DIR', '').strip()
@@ -44,7 +60,7 @@ def resolve_data_dir():
                 return os.path.abspath(os.path.expanduser(path))
     except Exception:
         pass
-    return default_data_dir()
+    return discover_synced_data_dir() or default_data_dir()
 
 DATA_DIR = resolve_data_dir()
 DATA_FILE = os.path.join(DATA_DIR, 'data.json')
@@ -61,6 +77,108 @@ DEFAULT_DATA = {"customers": [], "quotes": [], "nextCustomerId": 1, "nextQuoteId
 sessions = {}
 sessions_lock = threading.Lock()
 file_lock = threading.Lock()
+
+
+def configure_data_paths(path):
+    """切换全部业务文件路径；调用方负责确认目标目录。"""
+    global DATA_DIR, DATA_FILE, AUTH_FILE, BACKUP_DIR, IMAGES_DIR, REVISION_FILE
+    DATA_DIR = os.path.abspath(os.path.expanduser(path))
+    DATA_FILE = os.path.join(DATA_DIR, 'data.json')
+    AUTH_FILE = os.path.join(DATA_DIR, 'auth.json')
+    BACKUP_DIR = os.path.join(DATA_DIR, 'backup')
+    IMAGES_DIR = os.path.join(DATA_DIR, 'images')
+    REVISION_FILE = os.path.join(DATA_DIR, 'data.revision')
+
+
+def describe_data_dir(path=None):
+    path = os.path.abspath(path or DATA_DIR)
+    return {
+        'path': path,
+        'hasData': os.path.isfile(os.path.join(path, 'data.json')),
+        'hasAuth': os.path.isfile(os.path.join(path, 'auth.json')),
+        'isSyncedFolder': any(word.lower() in path.lower() for word in ('百度同步盘', 'baidusyncdisk', 'baidunetdisk', 'onedrive', 'dropbox')),
+    }
+
+
+def activate_data_directory(path):
+    if not path or not os.path.isdir(path):
+        raise ValueError('请选择有效的数据文件夹')
+    nested = os.path.join(path, '报价系统数据库')
+    if not os.path.isfile(os.path.join(path, 'data.json')) and os.path.isfile(os.path.join(nested, 'data.json')):
+        path = nested
+    path = os.path.abspath(path)
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    with file_lock:
+        with open(DATA_CONFIG_FILE, 'w', encoding='utf-8') as f:
+            f.write(path)
+        configure_data_paths(path)
+        ensure_runtime_dirs()
+        ensure_data_file()
+    with sessions_lock:
+        sessions.clear()
+    return describe_data_dir(path)
+
+
+class DATA_BLOB(ctypes.Structure):
+    _fields_ = [('cbData', ctypes.c_uint32), ('pbData', ctypes.POINTER(ctypes.c_ubyte))]
+
+
+def _dpapi_encrypt(raw):
+    if platform.system() != 'Windows':
+        return None
+    source = ctypes.create_string_buffer(raw)
+    in_blob = DATA_BLOB(len(raw), ctypes.cast(source, ctypes.POINTER(ctypes.c_ubyte)))
+    out_blob = DATA_BLOB()
+    if not ctypes.windll.crypt32.CryptProtectData(ctypes.byref(in_blob), 'ZhongheBaojiaERP', None, None, None, 0, ctypes.byref(out_blob)):
+        raise ctypes.WinError()
+    try:
+        return ctypes.string_at(out_blob.pbData, out_blob.cbData)
+    finally:
+        ctypes.windll.kernel32.LocalFree(out_blob.pbData)
+
+
+def _dpapi_decrypt(raw):
+    if platform.system() != 'Windows':
+        return None
+    source = ctypes.create_string_buffer(raw)
+    in_blob = DATA_BLOB(len(raw), ctypes.cast(source, ctypes.POINTER(ctypes.c_ubyte)))
+    out_blob = DATA_BLOB()
+    if not ctypes.windll.crypt32.CryptUnprotectData(ctypes.byref(in_blob), None, None, None, None, 0, ctypes.byref(out_blob)):
+        raise ctypes.WinError()
+    try:
+        return ctypes.string_at(out_blob.pbData, out_blob.cbData)
+    finally:
+        ctypes.windll.kernel32.LocalFree(out_blob.pbData)
+
+
+def save_remembered_login(username, password):
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    payload = json.dumps({'username': username, 'password': password}, ensure_ascii=False).encode('utf-8')
+    encrypted = _dpapi_encrypt(payload)
+    if encrypted is None:
+        return False
+    with open(REMEMBER_FILE, 'wb') as f:
+        f.write(encrypted)
+    return True
+
+
+def load_remembered_login():
+    if not os.path.isfile(REMEMBER_FILE):
+        return None
+    try:
+        with open(REMEMBER_FILE, 'rb') as f:
+            decrypted = _dpapi_decrypt(f.read())
+        return json.loads(decrypted.decode('utf-8')) if decrypted else None
+    except Exception:
+        return None
+
+
+def forget_remembered_login():
+    try:
+        if os.path.exists(REMEMBER_FILE):
+            os.remove(REMEMBER_FILE)
+    except Exception:
+        pass
 
 
 def data_revision():
@@ -776,6 +894,90 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+class NativeApi:
+    """仅供 pywebview 桌面窗口调用的本机能力。"""
+    def __init__(self):
+        self.window = None
+
+    def get_data_directory(self):
+        return describe_data_dir()
+
+    def choose_data_directory(self):
+        try:
+            import webview
+            window = self.window or (webview.windows[0] if webview.windows else None)
+            if window is None:
+                return {'ok': False, 'error': '桌面窗口尚未准备完成'}
+            result = window.create_file_dialog(webview.FOLDER_DIALOG, directory=DATA_DIR)
+            if not result:
+                return {'ok': False, 'cancelled': True}
+            selected = result[0] if isinstance(result, (tuple, list)) else result
+            info = activate_data_directory(selected)
+            return {'ok': True, **info}
+        except Exception as exc:
+            return {'ok': False, 'error': str(exc)}
+
+    def load_remembered_credentials(self):
+        saved = load_remembered_login()
+        return {'ok': True, 'supported': platform.system() == 'Windows', 'credentials': saved}
+
+    def save_remembered_credentials(self, username, password):
+        try:
+            if not username or not password:
+                raise ValueError('用户名和密码不能为空')
+            saved = save_remembered_login(str(username), str(password))
+            return {'ok': saved, 'supported': platform.system() == 'Windows'}
+        except Exception as exc:
+            return {'ok': False, 'error': str(exc)}
+
+    def clear_remembered_credentials(self):
+        forget_remembered_login()
+        return {'ok': True}
+
+
+def start_windows_tray(window, server):
+    """Windows 桌面窗口运行期间常驻通知区域图标。"""
+    if platform.system() != 'Windows':
+        return None
+    try:
+        import pystray
+        from PIL import Image
+        ico = os.path.join(RESOURCE_DIR, 'app-windows.ico')
+        tray_img = Image.open(ico).convert('RGBA') if os.path.exists(ico) else Image.new('RGBA', (64, 64), '#17324d')
+        state = {'quitting': False}
+
+        def show_app(icon=None, item=None):
+            try:
+                window.show()
+                window.restore()
+            except Exception:
+                pass
+
+        def quit_app(icon=None, item=None):
+            state['quitting'] = True
+            try:
+                if icon:
+                    icon.stop()
+            finally:
+                try:
+                    window.destroy()
+                except Exception:
+                    threading.Thread(target=server.shutdown, daemon=True).start()
+
+        tray = pystray.Icon(
+            'ZhongheBaojiaERP', tray_img, '中禾报价 ERP V9',
+            pystray.Menu(
+                pystray.MenuItem('打开中禾报价 ERP', show_app, default=True),
+                pystray.MenuItem('退出', quit_app)
+            )
+        )
+        tray.run_detached()
+        return tray
+    except Exception as exc:
+        print(f'系统托盘启动失败：{exc}', file=sys.stderr)
+        return None
+
+
 def run_desktop_window(server, port):
     """优先使用系统 WebView，确保 APP 在独立窗口中运行而不是跳转浏览器。"""
     try:
@@ -784,17 +986,24 @@ def run_desktop_window(server, port):
         return False
 
     threading.Thread(target=server.serve_forever, daemon=True).start()
+    native_api = NativeApi()
     window = webview.create_window(
         '中禾报价 ERP V9',
         f'http://127.0.0.1:{port}',
         width=1440,
         height=900,
         min_size=(1024, 700),
-        background_color='#eef0f2'
+        background_color='#eef0f2',
+        js_api=native_api
     )
+    native_api.window = window
+    tray = start_windows_tray(window, server)
     try:
         webview.start(debug=False, private_mode=False, storage_path=CONFIG_DIR)
     finally:
+        if tray:
+            try: tray.stop()
+            except Exception: pass
         server.shutdown()
     return window is not None
 
@@ -803,7 +1012,10 @@ if __name__ == '__main__':
     ensure_runtime_dirs(); ensure_data_file()
     instance=acquire_single_instance()
     if instance is False:
-        webbrowser.open('http://127.0.0.1:8000')
+        try:
+            ctypes.windll.user32.MessageBoxW(None, '中禾报价 ERP 已经在运行，请从右下角托盘图标打开。', '中禾报价 ERP', 0x40)
+        except Exception:
+            pass
         sys.exit(0)
     port=8000
     try:
